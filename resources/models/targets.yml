@@ -1,0 +1,4 @@
+targets:
+  world:
+    model_path: world
+    texture_path: world

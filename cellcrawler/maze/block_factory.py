@@ -8,15 +8,16 @@ from cellcrawler.maze.maze_data import MazeCell
 
 class BlockFactory(abc.ABC):
     """
-    A factory for maze nodes. Should create nodes with the size 1x1x(height). They will be automatically rescaled.
+    A factory for maze nodes. Should create nodes with the size 1x1x(height), with their center being at x=y=0,
+    and the floor level being at z=0. They will be automatically rescaled and positioned.
     """
 
     @abc.abstractmethod
-    def _create_empty(self) -> NodePath | ManagedNodePath:
+    def _create_empty(self) -> NodePath | ManagedNodePath | None:
         pass
 
     @abc.abstractmethod
-    def _create_wall(self) -> NodePath | ManagedNodePath:
+    def _create_wall(self) -> NodePath | ManagedNodePath | None:
         pass
 
     def create(self, typ: MazeCell, scale: float):
@@ -29,5 +30,6 @@ class BlockFactory(abc.ABC):
         if isinstance(node, ManagedNodePath):
             # NodeManager already knows about us, no need to retain the wrapper
             node = node.node
-        node.set_scale(scale)
+        if node:
+            node.set_scale(scale)
         return node
