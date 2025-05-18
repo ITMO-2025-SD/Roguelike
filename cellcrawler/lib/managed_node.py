@@ -1,8 +1,7 @@
-__all__ = ["ManagedNode", "ManagedNodePath"]
-
 import abc
-from typing import final, override
+from typing import override
 
+from direct.actor.Actor import Actor
 from panda3d.core import NodePath
 
 
@@ -10,11 +9,21 @@ class ManagedNode(abc.ABC):
     def __init__(self, parent: "ManagedNode | None") -> None:
         super().__init__()
         self.parent: ManagedNode | None = parent
-        node_manager.add(self)
+        self.children: set[ManagedNode] = set()
+        self.__removed = False
+        if parent is not None:
+            parent.children.add(self)
 
     def destroy(self):
-        node_manager.remove(self)
+        if self.__removed:
+            raise RuntimeError(f"Node {self} removed twice")
+        self.__removed = True
+        for c in self.children:
+            c.destroy()
+        self.children = set()
         self._cleanup()
+        if self.parent:
+            self.parent.children.discard(self)
 
     @abc.abstractmethod
     def _cleanup(self) -> None:
@@ -36,23 +45,16 @@ class ManagedNodePath(ManagedNode, abc.ABC):
         del self.node
 
 
-@final
-class NodeManager:
-    def __init__(self) -> None:
-        self.hierarchy: dict[ManagedNode, list[ManagedNode]] = {}
+class ManagedActor(ManagedNode, abc.ABC):
+    @abc.abstractmethod
+    def _load(self) -> Actor:
+        pass
 
-    def add(self, node: ManagedNode):
-        self.hierarchy[node] = []
-        if node.parent is not None:
-            self.hierarchy[node.parent].append(node)
+    def __init__(self, parent: "ManagedNode | None") -> None:
+        super().__init__(parent)
+        self.node: Actor = self._load()
 
-    def remove(self, node: ManagedNode):
-        if node not in self.hierarchy:
-            raise RuntimeError(f"Node {node} removed twice")
-        children = self.hierarchy.pop(node)
-        for c in children:
-            c.destroy()
-
-
-# Singleton :(
-node_manager = NodeManager()
+    @override
+    def _cleanup(self):
+        self.node.cleanup()
+        del self.node
