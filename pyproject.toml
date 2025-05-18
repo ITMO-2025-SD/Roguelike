@@ -1,0 +1,52 @@
+[project]
+name = "sd-roguelike"
+version = "0.1.0"
+description = "Roguelike assignment for Software Design class"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["panda3d>=1.10.15"]
+
+[dependency-groups]
+dev = ["ruff>=0.11.10", "types-panda3d>=0.4.1"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "F",      # pyflakes, checks basic things
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "I",      # sorts imports
+    "UP",     # upgrades syntax (right now for python 3.12)
+    "YTT",    # checks that we're not breaking anything on python 4
+    "S",      # bandit, checks security vulnerabilities
+    "BLE",    # bans "except BaseException" / "except Exception", sometimes has to be explicitly overridden
+    "B",      # bugbear, finds common bugs
+    "A001",
+    "A002",   # checks that variable names don't coincide with builtins names
+    "C4",     # cleans up useless list comprehensions
+    "ISC",    # tidies up literal string concatenation
+    "PIE",    # misc. lints - https://pypi.org/project/flake8-pie/
+    "T20",    # bans print statements
+    "TID252", # bans relative imports (from . import SomeFile)
+    "PL",     # pylint
+]
+
+
+ignore = [
+    "E731",   # don't assign lambdas, use a def
+    "S311",   # bans random.X(), which is fine because crypto bytes are ot needed
+    "B007",   # 'loop control variable not used within loop body', which happens sometimes with tuple unpacking
+    "B024",   # bans abstract base classes without abstract methods, which are USEFUL
+    "B027",   # bans empty non-abstract methods in abstract classes, which are USEFUL when default = do nothing
+    "B028",   # something with warnings.warn apparently
+    "C408",   # allow using dict(a=A, b=B, c=C)
+    "ISC001", # conflicts with formatter
+]
+
+[tool.pyright]
+pythonVersion = "3.12"
+reportAny = false
+reportExplicitAny = false
