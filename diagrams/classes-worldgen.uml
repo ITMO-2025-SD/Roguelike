@@ -1,0 +1,99 @@
+@startuml
+
+title Cell Crawler - World Generation
+
+abstract class BlockFactory {
+  #Node create_empty()
+  #Node create_wall()
+  +Node create(MazeCell type, float scale)
+}
+
+abstract class LevelFactory {
+  #Maze make_level()
+  +Environment make_env()
+}
+
+class ConstLevelFactory {
+  -path
+}
+
+class RandomLevelFactory {
+  -int size
+}
+
+Maze <-- LevelFactory: creates
+
+LevelFactory <|-- ConstLevelFactory
+LevelFactory <|-- RandomLevelFactory
+
+abstract class Managed {
+  #void cleanup()
+}
+
+class NodePath {
+  impl in the engine
+  +void render()
+  +void set_scale(float)
+  +void set_pos(x, y, z)
+  etc...()
+}
+
+abstract class ManagedNode {
+  #Node load()
+}
+
+Managed <|-- ManagedNode
+NodePath --* ManagedNode
+
+BlockFactory <|-- StdBlockFactory
+
+class Environment
+ManagedNode <|-- Environment
+
+BlockFactory <-- Environment
+
+class DepInjector
+
+class Maze {
+  +list[list[MazeCell]]
+}
+
+Maze -up-o DepInjector
+FileLoader -up-o DepInjector
+Loader -up-o DepInjector
+BlockFactory -up-o DepInjector
+
+class Loader {
+  impl in the engine
+  +Node load_model(path)
+}
+
+Maze -* Environment
+
+NodePath <-- Loader: creates
+
+FileLoader <-- ConstLevelFactory
+FileLoader o-- VirtualFS
+
+class FileLoader {
+  +str load(path)
+  +bytes load(path, "b")
+}
+
+class VirtualFS {
+  impl in the engine
+  +Filename get_file()
+}
+
+class LevelManager {
+  +Environment
+  +LevelFactory
+  +int level_num
+  -list[LevelFactory] predetermined
+  +void next_level()
+}
+
+LevelManager *-up- Environment
+LevelManager *-up- LevelFactory
+
+@enduml
