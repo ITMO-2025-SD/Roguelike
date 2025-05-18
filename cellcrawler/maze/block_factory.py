@@ -3,7 +3,7 @@ import abc
 from panda3d.core import NodePath
 
 from cellcrawler.lib.managed_node import ManagedNodePath
-from cellcrawler.maze.maze_data import MazeCell
+from cellcrawler.maze.maze_data import MazeCell, MazeCellBasic
 
 
 class BlockFactory(abc.ABC):
@@ -22,9 +22,9 @@ class BlockFactory(abc.ABC):
 
     def create(self, typ: MazeCell, scale: float):
         match typ:
-            case MazeCell.OPEN:
+            case MazeCellBasic.OPEN:
                 node = self._create_empty()
-            case MazeCell.WALL:
+            case MazeCellBasic.WALL:
                 node = self._create_wall()
 
         if isinstance(node, ManagedNodePath):

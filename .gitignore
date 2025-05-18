@@ -11,6 +11,7 @@ resources/models/intermediate
 resources/models/built
 resources/models/.doit.db
 *.blend1
+.cache
 
 # Virtual environments
 .venv

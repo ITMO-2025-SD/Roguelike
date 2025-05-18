@@ -2,9 +2,12 @@ import dataclasses
 from enum import Enum, auto
 
 
-class MazeCell(Enum):
+class MazeCellBasic(Enum):
     OPEN = auto()
     WALL = auto()
+
+
+MazeCell = MazeCellBasic
 
 
 @dataclasses.dataclass
