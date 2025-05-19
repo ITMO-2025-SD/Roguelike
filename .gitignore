@@ -8,7 +8,7 @@ wheels/
 
 # Asset composer-generated files
 resources/models/intermediate
-resources/models/built
+# resources/models/built
 resources/models/.doit.db
 *.blend1
 .cache

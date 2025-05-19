@@ -378,9 +378,12 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+assets = [
+    { name = "panda-utils", extra = ["everything"] },
+]
 dev = [
     { name = "click" },
-    { name = "panda-utils", extra = ["everything"] },
+    { name = "panda-utils" },
     { name = "ruff" },
     { name = "typer" },
     { name = "types-panda3d" },
@@ -393,9 +396,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+assets = [{ name = "panda-utils", extras = ["everything"], specifier = ">=1.6.5" }]
 dev = [
     { name = "click", specifier = "<8.2.0" },
-    { name = "panda-utils", extras = ["everything"], specifier = ">=1.6.5" },
+    { name = "panda-utils", specifier = ">=1.6.5" },
     { name = "ruff", specifier = ">=0.11.10" },
     { name = "typer", specifier = ">=0.15.3" },
     { name = "types-panda3d", specifier = ">=0.4.1" },

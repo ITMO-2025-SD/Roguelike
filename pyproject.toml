@@ -7,9 +7,12 @@ requires-python = ">=3.12"
 dependencies = ["panda3d>=1.10.15", "rich>=14.0.0"]
 
 [dependency-groups]
+assets = [
+    "panda-utils[everything]>=1.6.5",
+]
 dev = [
     "click<8.2.0",
-    "panda-utils[everything]>=1.6.5",
+    "panda-utils>=1.6.5",
     "ruff>=0.11.10",
     "typer>=0.15.3",
     "types-panda3d>=0.4.1",
