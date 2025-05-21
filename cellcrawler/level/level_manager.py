@@ -2,6 +2,7 @@ from typing import final
 
 from cellcrawler.core.environment import Environment
 from cellcrawler.maze.const_level_factory import ConstLevelFactory
+from cellcrawler.maze.random_dfs_level_factory import RandomDfsLevelFactory
 from cellcrawler.maze.level_factory import LevelFactory
 
 
@@ -15,9 +16,12 @@ class LevelManager:
         self.level_factory: LevelFactory | None = None
 
     def generate_floor(self, num: int) -> LevelFactory:
-        raise NotImplementedError(f"generate_floor: {num}")
+        return RandomDfsLevelFactory(num)
 
     def next_floor(self):
+        # self.level_factory = self.generate_floor(self.level_num)
+        # self.environ = self.level_factory.make_env()
+
         if self.level_num < len(self.PredeterminedLevels):
             self.level_factory = self.PredeterminedLevels[self.level_num]
         else:
