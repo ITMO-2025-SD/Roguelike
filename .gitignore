@@ -15,3 +15,7 @@ resources/models/.doit.db
 
 # Virtual environments
 .venv
+
+# ide config
+.vscode
+.idea

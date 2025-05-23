@@ -2,8 +2,8 @@ from typing import final
 
 from cellcrawler.core.environment import Environment
 from cellcrawler.maze.const_level_factory import ConstLevelFactory
-from cellcrawler.maze.random_dfs_level_factory import RandomDfsLevelFactory
 from cellcrawler.maze.level_factory import LevelFactory
+from cellcrawler.maze.random_dfs_level_factory import RandomDfsLevelFactory
 
 
 @final

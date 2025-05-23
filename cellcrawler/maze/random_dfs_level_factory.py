@@ -1,57 +1,43 @@
+from random import randint
 from typing import final, override
 
-from cellcrawler.lib.base import FileLoader, inject_globals
 from cellcrawler.maze.level_factory import LevelFactory
 from cellcrawler.maze.maze_data import MazeCell, MazeData
-from random import randint
 
 
 @final
 class RandomDfsLevelFactory(LevelFactory):
-    def __init__(self, seed: int) -> None:
+    def __init__(self, size: int) -> None:
         super().__init__()
-        self.seed = seed
+        # Size must be odd or the DFS does not work, so we make it odd
+        self.size = 2 * size + 1
 
-    def char_to_mode(self, char: str) -> MazeCell:
-        match char:
-            case "." | " ":
-                return MazeCell.OPEN
-            case "#":
-                return MazeCell.WALL
-            case _:
-                raise ValueError(f"Invalid character: {char}")
-            
-    def dfs(self, cells):
+    def dfs(self, cells: list[list[MazeCell]]):
         rows = len(cells)
         cols = len(cells[0])
-        st = [(1, 1)] # can be random cell with odd coords
-        diffs = [(0, 2),(0, -2),(2, 0),(-2, 0)]
+        st = [(1, 1)]  # can be random cell with odd coords
+        diffs = [(0, 2), (0, -2), (2, 0), (-2, 0)]
 
         while st:
             (x, y) = st.pop()
-            cells[x][y] = ' '
+            cells[x][y] = MazeCell.OPEN
 
             candidates = [
-                (x + dx, y + dy) 
-                for (dx, dy) in diffs 
-                if 0 <= x + dx < rows and 0 <= y + dy < cols and cells[x + dx][y + dy] == '#'
+                (x + dx, y + dy)
+                for (dx, dy) in diffs
+                if 0 <= x + dx < rows and 0 <= y + dy < cols and cells[x + dx][y + dy] == MazeCell.WALL
             ]
 
             if candidates:
                 st.append((x, y))
                 (nx, ny) = candidates[randint(0, len(candidates) - 1)]
-                cells[x + (nx - x) // 2][y + (ny - y) // 2] = ' '
+                cells[x + (nx - x) // 2][y + (ny - y) // 2] = MazeCell.OPEN
                 st.append((nx, ny))
 
         return cells
 
-    # @inject_globals
     @override
     def _make_level(self) -> MazeData:
-        # ROWS and COLS must be odd
-        rows = 51
-        cols = 51
-        cells = self.dfs( [['#' for j in range(cols)] for i in range(rows)] )
-        cells = [[self.char_to_mode(y) for y in x] for x in cells]
-        
+        cells = self.dfs([[MazeCell.WALL for _ in range(self.size)] for _ in range(self.size)])
+
         return MazeData(cells)
