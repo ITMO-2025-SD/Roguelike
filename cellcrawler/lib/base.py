@@ -6,6 +6,7 @@ from typing import Any, ClassVar, Concatenate, Literal, Never, final, overload
 from direct.showbase.Loader import Loader
 from direct.showbase.ShowBase import ShowBase
 from direct.stdpy import file
+from direct.task.Task import TaskManager
 from panda3d.core import Camera, NodePath, VirtualFileSystem, load_prc_file_data
 from rich.traceback import install
 
@@ -59,7 +60,7 @@ class RootNodes:
 @final
 class DependencyInjector:
     bound_types: ClassVar[dict[type[Any], Any]] = {}
-    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory}
+    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory, TaskManager}
 
     def __init__(self) -> Never:
         raise ValueError("Don't create DependencyInjector")
@@ -69,6 +70,7 @@ class DependencyInjector:
         cls.bound_types[Loader] = base.loader
         cls.bound_types[FileLoader] = FileLoader(VirtualFileSystem.get_global_ptr())
         cls.bound_types[RootNodes] = RootNodes(render=base.render, hidden=base.hidden, camera=base.cam)
+        cls.bound_types[TaskManager] = base.task_mgr
 
     @classmethod
     def set_maze(cls, maze: MazeData):
