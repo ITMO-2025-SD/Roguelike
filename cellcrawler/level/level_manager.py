@@ -1,5 +1,6 @@
 from typing import final
 
+from cellcrawler.character.player import Player
 from cellcrawler.core.environment import Environment
 from cellcrawler.maze.const_level_factory import ConstLevelFactory
 from cellcrawler.maze.level_factory import LevelFactory
@@ -14,6 +15,7 @@ class LevelManager:
         self.level_num = 0
         self.environ: Environment | None = None
         self.level_factory: LevelFactory | None = None
+        self.player: Player | None = None
 
     def generate_floor(self, num: int) -> LevelFactory:
         return RandomDfsLevelFactory(num)
@@ -29,4 +31,5 @@ class LevelManager:
         if self.environ:
             self.environ.destroy()
         self.environ = self.level_factory.make_env()
+        self.player = self.environ.spawn_player()
         self.level_num += 1

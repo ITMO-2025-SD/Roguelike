@@ -59,6 +59,7 @@ class RootNodes:
 @final
 class DependencyInjector:
     bound_types: ClassVar[dict[type[Any], Any]] = {}
+    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory}
 
     def __init__(self) -> Never:
         raise ValueError("Don't create DependencyInjector")
@@ -83,11 +84,15 @@ class DependencyInjector:
         ann.pop("return", None)
         ann.pop("self", None)
 
+        for typ in ann.values():
+            if typ not in cls.valid_types:
+                raise ValueError(f"Invalid injected type: {typ}")
+
         def injected(self: T):
             new_kwargs: dict[str, object] = {}
             for key, typ in ann.items():
                 if typ not in cls.bound_types:
-                    raise ValueError(f"Unknown type: {typ}")
+                    raise ValueError(f"Object does not exist yet: {typ}")
 
                 new_kwargs[key] = cls.bound_types[typ]
             return func(self, **new_kwargs)  # pyright: ignore[reportCallIssue]
