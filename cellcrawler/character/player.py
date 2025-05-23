@@ -56,7 +56,8 @@ class Player(Character):
         self.update_move_command()
 
     def add_command(self, type: CommandType, *args):
-        self.set_command(type, RotationCommand(*args))
+        if type == CommandType.ROTATE:
+            self.set_command(type, RotationCommand(*args))
 
     def remove_move_command(self, key: str):
         self.move_commands.pop(key, None)
