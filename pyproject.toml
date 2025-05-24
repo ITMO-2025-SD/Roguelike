@@ -7,9 +7,7 @@ requires-python = ">=3.12"
 dependencies = ["panda3d>=1.10.15", "rich>=14.0.0"]
 
 [dependency-groups]
-assets = [
-    "panda-utils[everything]>=1.6.5",
-]
+assets = ["panda-utils[everything]>=1.6.5"]
 dev = [
     "click<8.2.0",
     "panda-utils>=1.6.5",
@@ -28,6 +26,7 @@ select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
     "I",      # sorts imports
+    "N",      # checks various entities' names
     "UP",     # upgrades syntax (right now for python 3.12)
     "YTT",    # checks that we're not breaking anything on python 4
     "S",      # bandit, checks security vulnerabilities

@@ -15,7 +15,7 @@ from cellcrawler.character.character_command import (
     MovementCommand,
     Right,
     RotationCommand,
-    adjustForHpr,
+    adjust_for_hpr,
 )
 from cellcrawler.character.command_builder import CommandBuilder
 from cellcrawler.lib.base import inject_globals
@@ -39,7 +39,7 @@ class Player(Character):
         self.move_commands: dict[str, Vec3] = {}
 
         move_builder = CommandBuilder(
-            CommandType.MOVE, lambda c: MovementCommand(c, adjustForHpr), lambda x: lambda: x, CompositeDelta
+            CommandType.MOVE, lambda c: MovementCommand(c, adjust_for_hpr), lambda x: lambda: x, CompositeDelta
         )
         rotate_builder = CommandBuilder(CommandType.ROTATE, RotationCommand, lambda x: x, sum)
         self.key_tracker.accept("w", functools.partial(self.add_command, move_builder, "w", Forward))

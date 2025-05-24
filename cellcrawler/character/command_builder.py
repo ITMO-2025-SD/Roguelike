@@ -38,8 +38,8 @@ class CommandBuilder[T]:
         return self.command(self.composite(list(self.keys.values())))
 
 
-def SingletonBuilder[T](cmd_type: CommandType, command: Callable[[T], CharacterCommand]):
+def singleton_builder[T](cmd_type: CommandType, command: Callable[[T], CharacterCommand]):
     def should_not_call(_data: list[T]):
-        raise ValueError("Incorrect usage of SingletonBuilder")
+        raise ValueError("Incorrect usage of singleton_builder")
 
     return CommandBuilder(cmd_type, command, lambda x: x, should_not_call)

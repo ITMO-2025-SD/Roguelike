@@ -27,11 +27,11 @@ Left = Vec3(-1, 0, 0)
 Right = Vec3(1, 0, 0)
 
 
-def adjustForHpr(point: Vec3, character: NodePath):
+def adjust_for_hpr(point: Vec3, character: NodePath):
     x, y, z = point
     h = character.get_h()
-    hRad = h * math.pi / 180
-    return Vec3(-y * math.sin(hRad) + x * math.cos(hRad), y * math.cos(hRad) + x * math.sin(hRad), z)
+    h_rad = h * math.pi / 180
+    return Vec3(-y * math.sin(h_rad) + x * math.cos(h_rad), y * math.cos(h_rad) + x * math.sin(h_rad), z)
 
 
 @final
