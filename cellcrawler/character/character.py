@@ -3,7 +3,7 @@ from typing import override
 
 from direct.task.Task import Task, TaskManager
 
-from cellcrawler.character.movement_command import (CharacterCommand, CommandType)
+from cellcrawler.character.character_command import CharacterCommand, CommandType
 from cellcrawler.lib.base import inject_globals
 from cellcrawler.lib.managed_node import ManagedNode, ManagedNodePath
 
@@ -15,11 +15,11 @@ class Character(ManagedNodePath, abc.ABC):
         self.__commands: dict[CommandType, CharacterCommand] = {}
         self.__start_task()
 
-    def set_command(self, key: CommandType, command: CharacterCommand):
-        self.__commands[key] = command
-
-    def exclude_command(self, key: CommandType):
-        self.__commands.pop(key, None)
+    def set_command(self, key: CommandType, command: CharacterCommand | None):
+        if command is None:
+            self.__commands.pop(key, None)
+        else:
+            self.__commands[key] = command
 
     @inject_globals
     def __start_task(self, task_manager: TaskManager):
