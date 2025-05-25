@@ -2,6 +2,8 @@ import abc
 from typing import override
 
 from direct.actor.Actor import Actor
+from direct.gui.DirectGuiBase import DirectGuiWidget
+from direct.showbase.DirectObject import DirectObject
 from panda3d.core import NodePath
 
 
@@ -57,4 +59,34 @@ class ManagedActor(ManagedNode, abc.ABC):
     @override
     def _cleanup(self):
         self.node.cleanup()
+        del self.node
+
+
+class ManagedGui(ManagedNode, abc.ABC):
+    @abc.abstractmethod
+    def _load(self) -> DirectGuiWidget:
+        pass
+
+    def __init__(self, parent: "ManagedNode | None") -> None:
+        super().__init__(parent)
+        self.node: DirectGuiWidget = self._load()
+
+    @override
+    def _cleanup(self):
+        self.node.destroy()
+        del self.node
+
+
+class ManagedDirectObject(ManagedNode, abc.ABC):
+    @abc.abstractmethod
+    def _load(self) -> DirectObject:
+        pass
+
+    def __init__(self, parent: "ManagedNode | None") -> None:
+        super().__init__(parent)
+        self.node: DirectObject = self._load()
+
+    @override
+    def _cleanup(self):
+        self.node.ignore_all()
         del self.node

@@ -2,6 +2,7 @@ from typing import final
 
 from cellcrawler.character.player import Player
 from cellcrawler.core.environment import Environment
+from cellcrawler.gui.keybind_panel import KeybindPanel
 from cellcrawler.maze.const_level_factory import ConstLevelFactory
 from cellcrawler.maze.level_factory import LevelFactory
 from cellcrawler.maze.random_dfs_level_factory import RandomDfsLevelFactory
@@ -13,6 +14,7 @@ class LevelManager:
 
     def __init__(self) -> None:
         self.level_num = 0
+        self.keybind_panel = KeybindPanel(None)
         self.environ: Environment | None = None
         self.level_factory: LevelFactory | None = None
         self.player: Player | None = None

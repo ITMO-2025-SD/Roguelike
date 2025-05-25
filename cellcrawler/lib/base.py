@@ -55,22 +55,36 @@ class RootNodes:
     hidden: NodePath
     # NodePath is not generic within P3D code, only in typechecker code, so this must be quoted
     camera: "NodePath[Camera]"
+    # Various corner nodes
+    top_left: NodePath
+    bottom_left: NodePath
+    top_right: NodePath
+    bottom_right: NodePath
 
 
 # Another singleton :(
 @final
 class DependencyInjector:
     bound_types: ClassVar[dict[type[Any], Any]] = {}
-    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory, TaskManager, CollisionTraverser}
+    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory, TaskManager, CollisionTraverser, ShowBase}
 
     def __init__(self) -> Never:
         raise ValueError("Don't create DependencyInjector")
 
     @classmethod
     def set_base(cls, base: CrawlerBase):
+        cls.bound_types[ShowBase] = base
         cls.bound_types[Loader] = base.loader
         cls.bound_types[FileLoader] = FileLoader(VirtualFileSystem.get_global_ptr())
-        cls.bound_types[RootNodes] = RootNodes(render=base.render, hidden=base.hidden, camera=base.cam)
+        cls.bound_types[RootNodes] = RootNodes(
+            render=base.render,
+            hidden=base.hidden,
+            camera=base.cam,
+            top_left=base.a2dTopLeft,
+            bottom_left=base.a2dBottomLeft,
+            top_right=base.a2dTopRight,
+            bottom_right=base.a2dBottomRight,
+        )
         cls.bound_types[TaskManager] = base.task_mgr
         cls.bound_types[CollisionTraverser] = base.cTrav
 
