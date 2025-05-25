@@ -1,7 +1,8 @@
 import abc
-from typing import override
+from typing import Final, override
 
 from direct.task.Task import Task, TaskManager
+from panda3d.core import CollisionNode
 
 from cellcrawler.character.character_command import CharacterCommand, CommandType
 from cellcrawler.lib.base import inject_globals
@@ -10,6 +11,7 @@ from cellcrawler.lib.managed_node import ManagedNode, ManagedNodePath
 
 class Character(ManagedNodePath, abc.ABC):
     def __init__(self, parent: ManagedNode | None) -> None:
+        self.collision_node: Final = CollisionNode(f"char-{id(self)}")
         super().__init__(parent)
 
         self.__commands: dict[CommandType, CharacterCommand] = {}

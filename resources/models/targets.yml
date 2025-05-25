@@ -2,3 +2,6 @@ targets:
   world:
     model_path: world
     texture_path: world
+  characters:
+    model_path: characters
+    texture_path: characters

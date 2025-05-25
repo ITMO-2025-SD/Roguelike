@@ -3,7 +3,7 @@ from typing import final, override
 
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.Loader import Loader
-from panda3d.core import NodePath, Vec3
+from panda3d.core import CollisionCapsule, CollisionHandlerPusher, CollisionTraverser, NodePath, Vec3
 
 from cellcrawler.character.character import Character
 from cellcrawler.character.character_command import (
@@ -26,14 +26,21 @@ from cellcrawler.lib.managed_node import ManagedNode
 class Player(Character):
     @override
     @inject_globals
-    def _load(self, loader: Loader) -> NodePath:
-        # TODO: this is temporary
-        model = loader.load_model("world/wall.bam", okMissing=False)
+    def _load(self, loader: Loader, ctrav: CollisionTraverser) -> NodePath:
+        # TODO: this model is temporary
+        model = loader.load_model("characters/player.bam", okMissing=False)
         model.set_scale(0.5)
         model.set_color_scale((1, 1, 0, 1))
+        # NOTE: don't use CollisionSphere, it can pass through walls due to an apparent bug in panda3d
+        self.collision_node.add_solid(CollisionCapsule((0, 0, 0), (0, 0, 0.01), 0.5))
+        collider = model.attach_new_node(self.collision_node)
+        self.pusher.add_collider(collider, model)
+        ctrav.add_collider(collider, self.pusher)
         return model
 
     def __init__(self, parent: ManagedNode | None) -> None:
+        self.pusher = CollisionHandlerPusher()
+        self.pusher.set_horizontal(True)
         super().__init__(parent)
         self.key_tracker = DirectObject()
         self.move_commands: dict[str, Vec3] = {}

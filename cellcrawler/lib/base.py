@@ -7,7 +7,7 @@ from direct.showbase.Loader import Loader
 from direct.showbase.ShowBase import ShowBase
 from direct.stdpy import file
 from direct.task.Task import TaskManager
-from panda3d.core import Camera, NodePath, VirtualFileSystem, load_prc_file_data
+from panda3d.core import Camera, CollisionTraverser, NodePath, VirtualFileSystem, load_prc_file_data
 from rich.traceback import install
 
 from cellcrawler.maze.block_factory import BlockFactory
@@ -26,6 +26,7 @@ class CrawlerBase(ShowBase):
         vfs = VirtualFileSystem.get_global_ptr()
         vfs.unmount_all()
         vfs.mount("resources", "/", 0)
+        self.cTrav = CollisionTraverser()
         DependencyInjector.set_base(self)
 
 
@@ -60,7 +61,7 @@ class RootNodes:
 @final
 class DependencyInjector:
     bound_types: ClassVar[dict[type[Any], Any]] = {}
-    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory, TaskManager}
+    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory, TaskManager, CollisionTraverser}
 
     def __init__(self) -> Never:
         raise ValueError("Don't create DependencyInjector")
@@ -71,6 +72,7 @@ class DependencyInjector:
         cls.bound_types[FileLoader] = FileLoader(VirtualFileSystem.get_global_ptr())
         cls.bound_types[RootNodes] = RootNodes(render=base.render, hidden=base.hidden, camera=base.cam)
         cls.bound_types[TaskManager] = base.task_mgr
+        cls.bound_types[CollisionTraverser] = base.cTrav
 
     @classmethod
     def set_maze(cls, maze: MazeData):
