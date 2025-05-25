@@ -36,7 +36,7 @@ def adjust_for_hpr(point: Vec3, character: NodePath):
 
 @final
 class MovementCommand(CharacterCommand):
-    SPEED = 1000
+    SPEED = 2000
 
     def __init__(self, delta: Callable[[], Vec3], adjuster: AdjusterT | None = None) -> None:
         super().__init__()
@@ -65,7 +65,7 @@ class CompositeDelta:
 
 @final
 class RotationCommand(CharacterCommand):
-    ROTATION_SPEED = 100000
+    ROTATION_SPEED = 70000
 
     def __init__(self, direction: int):
         super().__init__()

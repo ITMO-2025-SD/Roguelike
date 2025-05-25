@@ -18,6 +18,7 @@ from cellcrawler.maze.maze_data import MazeData
 class CrawlerBase(ShowBase):
     def __init__(self):
         super().__init__()
+        self.disable_mouse()
 
         install(show_locals=True)
 

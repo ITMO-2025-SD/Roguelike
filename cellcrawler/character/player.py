@@ -18,7 +18,7 @@ from cellcrawler.character.character_command import (
     adjust_for_hpr,
 )
 from cellcrawler.character.command_builder import CommandBuilder
-from cellcrawler.lib.base import inject_globals
+from cellcrawler.lib.base import RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
 
 
@@ -32,7 +32,7 @@ class Player(Character):
         model.set_scale(0.5)
         model.set_color_scale((1, 1, 0, 1))
         # NOTE: don't use CollisionSphere, it can pass through walls due to an apparent bug in panda3d
-        self.collision_node.add_solid(CollisionCapsule((0, 0, 0), (0, 0, 0.01), 0.5))
+        self.collision_node.add_solid(CollisionCapsule((0, 0, 0), (0, 0, 0.01), 0.7))
         collider = model.attach_new_node(self.collision_node)
         self.pusher.add_collider(collider, model)
         ctrav.add_collider(collider, self.pusher)
@@ -44,6 +44,8 @@ class Player(Character):
         super().__init__(parent)
         self.key_tracker = DirectObject()
         self.move_commands: dict[str, Vec3] = {}
+
+        self.configure_camera()
 
         move_builder = CommandBuilder(
             CommandType.MOVE, lambda c: MovementCommand(c, adjust_for_hpr), lambda x: lambda: x, CompositeDelta
@@ -62,6 +64,13 @@ class Player(Character):
         self.key_tracker.accept("d-up", functools.partial(self.remove_command, move_builder, "d"))
         self.key_tracker.accept("q-up", functools.partial(self.remove_command, rotate_builder, "q"))
         self.key_tracker.accept("e-up", functools.partial(self.remove_command, rotate_builder, "e"))
+
+    @inject_globals
+    def configure_camera(self, nodes: RootNodes):
+        # Rudimentary camera looking down. Should adjust placement later.
+        nodes.camera.reparent_to(self.node)
+        nodes.camera.set_hpr(0, -90, 0)
+        nodes.camera.set_pos(0, 0, 15)
 
     def add_command[T](self, builder: CommandBuilder[T], key: str, value: T):
         command = builder.add(key, value)
