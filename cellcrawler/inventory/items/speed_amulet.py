@@ -1,4 +1,3 @@
-import random
 from typing import final, override
 
 from direct.showbase.Loader import Loader
@@ -15,15 +14,12 @@ class SpeedAmulet(InventoryItem):
 
     def __init__(self):
         super().__init__(ItemCategory.AMULET)
-        self.color = (random.random(), random.random(), random.random(), 1)
 
     @override
     @inject_globals
     def make_geom(self, loader: Loader) -> NodePath:
-        # TODO: this model is temporary
-        model = loader.load_model("characters/player.bam", okMissing=False)
-        model.set_color_scale(self.color)
-        return model
+        model = loader.load_model("gui/items.bam", okMissing=False)
+        return model.find("**/speed_amulet")
 
     @override
     def make_equipment(self, parent: PlayerNode) -> GameNode[PlayerNode]:

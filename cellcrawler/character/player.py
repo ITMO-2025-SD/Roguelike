@@ -77,9 +77,8 @@ class Player(Character[PlayerNode]):
         self.inventory = Inventory(self.calc_node, [SpeedAmulet()])
         self.inventory_gui = InventoryGUI(self, self.inventory)
         self.inventory_gui.frame.hide()
-        # TODO: rudimentary implementation of inventory.
+        # TODO: might need a GUI manager
         self.key_tracker.accept("i", functools.partial(toggle_vis, self.inventory_gui.frame))
-        self.key_tracker.accept("p", lambda: self.inventory.add(SpeedAmulet()))
 
     @inject_globals
     def configure_camera(self, nodes: RootNodes):

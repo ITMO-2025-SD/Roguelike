@@ -44,7 +44,6 @@ class ItemFrame:
             relief=DirectGuiGlobals.SUNKEN,
             frameSize=(-BUTTON_SIZE / 2, BUTTON_SIZE / 2, -BUTTON_SIZE / 2, BUTTON_SIZE / 2),
             image_scale=BUTTON_SIZE,
-            image_pos=(0, 0, -BUTTON_SIZE / 2),  # wtf?
             command=lambda: self.run_callback_at(idx),
         )
 
