@@ -18,8 +18,12 @@ from cellcrawler.character.character_command import (
     adjust_for_hpr,
 )
 from cellcrawler.character.command_builder import CommandBuilder
+from cellcrawler.inventory.datastore import Inventory
+from cellcrawler.inventory.gui import InventoryGUI
+from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
 from cellcrawler.lib.base import RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
+from cellcrawler.lib.p3d_utils import toggle_vis
 
 
 @final
@@ -64,6 +68,13 @@ class Player(Character):
         self.key_tracker.accept("d-up", functools.partial(self.remove_command, move_builder, "d"))
         self.key_tracker.accept("q-up", functools.partial(self.remove_command, rotate_builder, "q"))
         self.key_tracker.accept("e-up", functools.partial(self.remove_command, rotate_builder, "e"))
+
+        self.inventory = Inventory([SpeedAmulet()])
+        self.inventory_gui = InventoryGUI(self, self.inventory)
+        self.inventory_gui.frame.hide()
+        # TODO: rudimentary implementation of inventory.
+        self.key_tracker.accept("i", functools.partial(toggle_vis, self.inventory_gui.frame))
+        self.key_tracker.accept("p", lambda: self.inventory.add(SpeedAmulet()))
 
     @inject_globals
     def configure_camera(self, nodes: RootNodes):
