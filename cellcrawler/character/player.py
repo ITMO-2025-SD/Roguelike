@@ -18,6 +18,7 @@ from cellcrawler.character.character_command import (
     adjust_for_hpr,
 )
 from cellcrawler.character.command_builder import CommandBuilder
+from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
 from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
@@ -27,7 +28,7 @@ from cellcrawler.lib.p3d_utils import toggle_vis
 
 
 @final
-class Player(Character):
+class Player(Character[PlayerNode]):
     @override
     @inject_globals
     def _load(self, loader: Loader, ctrav: CollisionTraverser) -> NodePath:
@@ -41,6 +42,10 @@ class Player(Character):
         self.pusher.add_collider(collider, model)
         ctrav.add_collider(collider, self.pusher)
         return model
+
+    @override
+    def create_calc_node(self, parent: LevelTree) -> PlayerNode:
+        return PlayerNode(parent)
 
     def __init__(self, parent: ManagedNode | None) -> None:
         self.pusher = CollisionHandlerPusher()
@@ -69,7 +74,7 @@ class Player(Character):
         self.key_tracker.accept("q-up", functools.partial(self.remove_command, rotate_builder, "q"))
         self.key_tracker.accept("e-up", functools.partial(self.remove_command, rotate_builder, "e"))
 
-        self.inventory = Inventory([SpeedAmulet()])
+        self.inventory = Inventory(self.calc_node, [SpeedAmulet()])
         self.inventory_gui = InventoryGUI(self, self.inventory)
         self.inventory_gui.frame.hide()
         # TODO: rudimentary implementation of inventory.

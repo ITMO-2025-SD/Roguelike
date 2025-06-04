@@ -6,6 +6,8 @@ from typing import final, override
 
 from panda3d.core import NodePath, Vec3
 
+from cellcrawler.core.roguelike_calc_tree import CharacterNode, CharacterSpeed
+
 
 class CommandType(Enum):
     MOVE = auto()
@@ -17,7 +19,7 @@ AdjusterT = Callable[[Vec3, NodePath], Vec3]
 
 class CharacterCommand(abc.ABC):
     @abc.abstractmethod
-    def run(self, character: NodePath, dt: float) -> None:
+    def run(self, character: NodePath, node: CharacterNode, dt: float) -> None:
         pass
 
 
@@ -43,11 +45,14 @@ class MovementCommand(CharacterCommand):
         self.delta = delta
         self.adjuster = adjuster
 
+    def calc_speed(self, node: CharacterNode):
+        return node.calculate(CharacterSpeed, self.SPEED, node)
+
     @override
-    def run(self, character: NodePath, dt: float):
+    def run(self, character: NodePath, node: CharacterNode, dt: float):
         pos = character.get_pos()
         delta = self.delta() if self.adjuster is None else self.adjuster(self.delta(), character)
-        character.set_pos(pos + delta * dt * self.SPEED)
+        character.set_pos(pos + delta * dt * self.calc_speed(node))
 
 
 @final
@@ -72,6 +77,6 @@ class RotationCommand(CharacterCommand):
         self.delta = direction
 
     @override
-    def run(self, character: NodePath, dt: float):
+    def run(self, character: NodePath, node: CharacterNode, dt: float):
         h = character.get_h()
         character.set_h(h + self.delta * dt * self.ROTATION_SPEED)

@@ -7,6 +7,8 @@ from uuid import UUID, uuid4
 from observables.observable_object import ObservableList
 from panda3d.core import NodePath
 
+from cellcrawler.core.roguelike_calc_tree import GameNode, PlayerNode
+
 INVENTORY_SIZE = 4 * 4
 
 
@@ -22,18 +24,24 @@ class InventoryItem(abc.ABC):
     def __init__(self, category: ItemCategory) -> None:
         self.category = category
         self.uuid = uuid4()
+        self.current_equipment: GameNode[PlayerNode] | None = None
 
     @abc.abstractmethod
     def make_geom(self) -> NodePath:
         pass
 
+    @abc.abstractmethod
+    def make_equipment(self, parent: PlayerNode) -> GameNode[PlayerNode]:
+        pass
+
 
 @final
 class Inventory:
-    def __init__(self, items: Iterable[InventoryItem]) -> None:
+    def __init__(self, node: PlayerNode, items: Iterable[InventoryItem]) -> None:
         items = list(items)
         self.equipped: ObservableList[InventoryItem | None] = ObservableList([None for _ in range(len(ItemCategory))])
         self.items = ObservableList(items or [])
+        self.calc_node = node
 
     def add(self, item: InventoryItem) -> bool:
         total_items = len(self.items.value) + sum(x is not None for x in self.equipped.value)
@@ -62,6 +70,7 @@ class Inventory:
 
         del self.items.value[i]
         self.equipped.value[it.category] = it
+        it.current_equipment = it.make_equipment(self.calc_node)
 
     def unequip(self, uuid: UUID):
         for i, it in enumerate(self.equipped.value):
@@ -72,3 +81,6 @@ class Inventory:
 
         self.items.value.append(it)
         self.equipped.value[i] = None
+        if it.current_equipment is not None:
+            it.current_equipment.destroy()
+            it.current_equipment = None

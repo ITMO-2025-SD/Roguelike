@@ -3,6 +3,7 @@ from typing import final
 from cellcrawler.character.player import Player
 from cellcrawler.core.environment import Environment
 from cellcrawler.gui.keybind_panel import KeybindPanel
+from cellcrawler.lib.base import DependencyInjector
 from cellcrawler.maze.const_level_factory import ConstLevelFactory
 from cellcrawler.maze.level_factory import LevelFactory
 from cellcrawler.maze.random_dfs_level_factory import RandomDfsLevelFactory
@@ -33,5 +34,6 @@ class LevelManager:
         if self.environ:
             self.environ.destroy()
         self.environ = self.level_factory.make_env()
+        DependencyInjector.set_level_tree(self.environ.calc_node)
         self.player = self.environ.spawn_player()
         self.level_num += 1
