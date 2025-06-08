@@ -1,0 +1,17 @@
+@startuml
+
+title Cellcrawler - State Machine
+
+[*] --> Level : start game
+
+Level --> Level : got to portal
+
+Level --> Defeat : hp = 0
+
+Defeat --> Level : play again
+
+Defeat --> [*] : exit
+
+Defeat : displays Play again and Exit buttons
+
+@enduml
