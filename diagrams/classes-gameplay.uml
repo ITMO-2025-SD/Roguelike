@@ -50,7 +50,7 @@ class Player {
 Character <|-- Mob
 Mob *-- MovementStrategy
 Character <|-- Player
-Player *-- Inventory
+Player o-- Inventory: owned by LevelManager
 Inventory *-- InventoryItem: many
 MovementStrategy <|-- TargetStrategy
 MovementStrategy <|-- StandStillStrategy
