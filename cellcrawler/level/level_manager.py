@@ -5,7 +5,7 @@ from cellcrawler.core.environment import Environment
 from cellcrawler.gui.keybind_panel import KeybindPanel
 from cellcrawler.maze.const_level_factory import ConstLevelFactory
 from cellcrawler.maze.level_factory import LevelFactory
-from cellcrawler.maze.random_dfs_level_factory import RandomDfsLevelFactory
+from cellcrawler.maze.random_rooms_level_factory import RandomRoomsLevelFactory
 
 
 @final
@@ -20,7 +20,7 @@ class LevelManager:
         self.player: Player | None = None
 
     def generate_floor(self, num: int) -> LevelFactory:
-        return RandomDfsLevelFactory(num)
+        return RandomRoomsLevelFactory(num + 10, 2, 3 + num // 4, num * (num + 1) + 4)
 
     def next_floor(self):
         # self.level_factory = self.generate_floor(self.level_num)
