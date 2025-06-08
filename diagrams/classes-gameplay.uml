@@ -1,33 +1,47 @@
 @startuml
 
-title Cell Crawler - Characters
+title Cell Crawler - Gameplay
 
 class Character {
   +(x,y) next_cell(x, y)
+  -dict[str, Command] commands
+  #set_command(str, Command | None)
 }
+
+class Command {
+  +run(Node, CalcNode)
+}
+
+class CommandBuilder {
+  Abstract in X
+  -X → Command
+  +add(X)
+  +remove(X)
+  +Command build()
+}
+
+Character --> Command: uses
+
+CommandBuilder --> Command: creates
+
+Player *-- CommandBuilder: many
 
 class Node {
   impl by the engine
   +Vec3 get_pos()
 }
 
-class Environment {
-  +void update_trackers()
-}
-class PositionTracker
-
 Character *-left- Node
 
-class PositionTracker {
-  -x,y current
-}
-
 Environment *-down- Character: many
-Character *-right- PositionTracker
 
 abstract class MovementStrategy {
   +(x,y) next_cell(x, y, maze)
+  -Command make_command(x, y)
 }
+
+Command <|-- MovementCommand
+Command <|-- RotationCommand
 
 class Player {
   -set[Keybind] active
@@ -36,8 +50,22 @@ class Player {
 Character <|-- Mob
 Mob *-- MovementStrategy
 Character <|-- Player
+Player *-- Inventory
+Inventory *-- InventoryItem: many
 MovementStrategy <|-- TargetStrategy
 MovementStrategy <|-- StandStillStrategy
+
+class Inventory {
+  +add(item)
+  +remove(item)
+  +equip(uuid)
+  +unequip(uuid)
+}
+
+class InventoryItem {
+  +CalculationNode equipment()
+  +Node ui()
+}
 
 class CalculationNode {
   #CalculationNode parent
@@ -60,26 +88,8 @@ CalculationNode <|-- ArmorItem
 Character *-- CalculationNode
 CalculationNode *-- CalculationNode: children, 0-many
 
-Environment *-down- CellManager
-PositionTracker -up-> CellManager
-
-class CellManager {
-  -dict[{x, y} → list[Character]]
-  +bool enter(Character, x, y)
-}
-
-abstract class Cell {
-  +bool walkable(Character)
-  +void enter(Character)
-}
-
-Cell <|-- Wall
-Cell <|-- Empty
-Cell <|-- Portal
-
 Environment *-right- Maze
-Maze *-- Cell: many*many
-CellManager --> Cell
+Maze *-- Cell: many
 
 LevelManager *-right- Environment
 LevelManager *-left- LevelFactory
@@ -90,8 +100,6 @@ abstract class MobFactory {
   +void spawn(int index)
 }
 
-MobFactory --> Character
-MobFactory -left|> ConstMobFactory
-MobFactory -left|> RandomMobFactory
+MobFactory --> Character: creates
 
 @enduml
