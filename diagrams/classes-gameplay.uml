@@ -14,7 +14,7 @@ class Command {
 
 class CommandBuilder {
   Abstract in X
-  -X → Command
+  -list[X] → Command
   +add(X)
   +remove(X)
   +Command build()
