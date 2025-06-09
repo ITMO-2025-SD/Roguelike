@@ -44,18 +44,19 @@ class Inventory:
         self.calc_node = node
 
     def add(self, item: InventoryItem) -> bool:
-        total_items = len(self.items.value) + sum(x is not None for x in self.equipped.value)
-        used_categories = {x.category for x in self.items.value} | {y.category for y in self.equipped.value if y}
-        unused_categories = len(ItemCategory) - len(used_categories)
-        if (
-            # If this clause is false, we will not be able to switch items without throwing them away
-            total_items + 1 + unused_categories >= INVENTORY_SIZE + len(ItemCategory)
-            # If this clause is false, there's no space.
-            or len(self.items.value) >= INVENTORY_SIZE
-        ):
+        if len(self.items.value) >= INVENTORY_SIZE:
             return False
         self.items.value.append(item)
         return True
+
+    def remove(self, uuid: UUID):
+        for i, it in enumerate(self.items.value):
+            if it.uuid == uuid:
+                break
+        else:
+            raise ValueError(f"No item with ID: {uuid}")
+
+        del self.items.value[i]
 
     def equip(self, uuid: UUID):
         for i, it in enumerate(self.items.value):

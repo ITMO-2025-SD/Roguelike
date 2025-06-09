@@ -2,7 +2,7 @@
 
 import weakref
 from collections.abc import Callable, Iterable
-from typing import Any, ClassVar, TypeVar, final
+from typing import Any, ClassVar, TypeVar, final, override
 
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from observables.observable_generic import ObservableObject
@@ -28,7 +28,7 @@ class DirectGuiWrapper(DictLikeWrapper[T_co]):
 
     @final
     class HookManager:
-        def __init__(self, node: str, ref: weakref.ref[DictLikeWrapper[T_co]]):
+        def __init__(self, node: str, ref: weakref.ref["DirectGuiWrapper[T_co]"]):
             self.ref = ref
             self.node = node
 
@@ -38,10 +38,18 @@ class DirectGuiWrapper(DictLikeWrapper[T_co]):
 
             DirectGuiWidget.guiDict.pop(self.node, None)
 
+    @override
+    def destroyTokens(self) -> None:
+        for c in self.children:
+            c.destroyTokens()
+        self.children = []
+        return super().destroyTokens()
+
     def __init__(self, constructor: type[T_co], /, *args: object, **kwargs: object):
         super().__init__(constructor, *args, **kwargs)
         node_name = f"HookDeleter-{DirectGuiWrapper.count}"
         DirectGuiWrapper.count += 1
+        self.children: list[DirectGuiWrapper[Any]] = []
         self.__hookDeleter = NodePath(node_name)
         self.__hookDeleter.reparentTo(self.value)
         self.__hookDeleter.hide()

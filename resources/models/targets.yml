@@ -12,3 +12,8 @@ targets:
     parameters:
       palettize: '1024'
       downscale: '256'
+    overrides:
+      elements:
+        parameters:
+          downscale: false
+          texture_cards: '512'
