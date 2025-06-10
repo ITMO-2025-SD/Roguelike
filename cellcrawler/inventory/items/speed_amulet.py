@@ -1,11 +1,10 @@
 from typing import final, override
 
-from direct.showbase.Loader import Loader
 from panda3d.core import NodePath
 
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, CharacterSpeed, GameNode, PlayerNode
 from cellcrawler.inventory.datastore import InventoryItem, ItemCategory
-from cellcrawler.lib.base import inject_globals
+from cellcrawler.lib.model_repository import models
 
 
 @final
@@ -16,10 +15,8 @@ class SpeedAmulet(InventoryItem):
         super().__init__(ItemCategory.AMULET)
 
     @override
-    @inject_globals
-    def make_geom(self, loader: Loader) -> NodePath:
-        model = loader.load_model("gui/items.bam", okMissing=False)
-        return model.find("**/speed_amulet")
+    def make_geom(self) -> NodePath:
+        return models.get_item("speed_amulet")
 
     @override
     def make_equipment(self, parent: PlayerNode) -> GameNode[PlayerNode]:

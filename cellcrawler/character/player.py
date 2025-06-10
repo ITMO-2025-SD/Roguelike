@@ -2,7 +2,6 @@ import functools
 from typing import final, override
 
 from direct.showbase.DirectObject import DirectObject
-from direct.showbase.Loader import Loader
 from panda3d.core import CollisionCapsule, CollisionHandlerPusher, CollisionTraverser, NodePath, Vec3
 
 from cellcrawler.character.character import Character
@@ -24,6 +23,7 @@ from cellcrawler.inventory.gui import InventoryGUI
 from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
 from cellcrawler.lib.base import RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
+from cellcrawler.lib.model_repository import models
 from cellcrawler.lib.p3d_utils import toggle_vis
 
 
@@ -31,9 +31,9 @@ from cellcrawler.lib.p3d_utils import toggle_vis
 class Player(Character[PlayerNode]):
     @override
     @inject_globals
-    def _load(self, loader: Loader, ctrav: CollisionTraverser) -> NodePath:
+    def _load(self, ctrav: CollisionTraverser) -> NodePath:
         # TODO: this model is temporary
-        model = loader.load_model("characters/player.bam", okMissing=False)
+        model = models.load_model("characters/player")
         model.set_scale(0.5)
         model.set_color_scale((1, 1, 0, 1))
         # NOTE: don't use CollisionSphere, it can pass through walls due to an apparent bug in panda3d

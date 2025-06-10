@@ -6,13 +6,12 @@ from uuid import UUID
 from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectLabel import DirectLabel
-from direct.showbase.Loader import Loader
 from observables.observable_object import ObservableList
 from panda3d.core import NodePath, Vec2
 
 from cellcrawler.inventory.datastore import Inventory, InventoryItem
-from cellcrawler.lib.base import inject_globals
 from cellcrawler.lib.managed_node import ManagedGui, ManagedNode
+from cellcrawler.lib.model_repository import models
 from cellcrawler.lib.observable_utils import DirectGuiWrapper, NodePathComputed
 
 BUTTON_SIZE = 0.2
@@ -39,23 +38,13 @@ class ItemFrame:
             btn.value.set_pos((x, 0, y))
             self.buttons.append(btn)
 
-    @inject_globals
-    def __get_trash_can(self, loader: Loader):
-        model = loader.load_model("gui/elements.bam", okMissing=False)
-        return model.find("**/trash_can")
-
-    @inject_globals
-    def __get_inventory_square(self, loader: Loader):
-        model = loader.load_model("gui/elements.bam", okMissing=False)
-        return model.find("**/inventory_square")
-
     def make_button(self, idx: int, remove_callback: Callable[[UUID], None] | None) -> DirectGuiWrapper[DirectButton]:
         nodepath = NodePathComputed(functools.partial(self.get_node_at, idx))
         btn = DirectGuiWrapper(
             DirectButton,
             parent=self.node,
             relief=None,
-            geom=self.__get_inventory_square(),
+            geom=models.get_gui_element("inventory_square"),
             frameSize=(-BUTTON_SIZE / 2, BUTTON_SIZE / 2, -BUTTON_SIZE / 2, BUTTON_SIZE / 2),
             geom_scale=BUTTON_SIZE * 2,
             command=lambda: self.run_callback_at(idx, self.callback),
@@ -66,7 +55,7 @@ class ItemFrame:
             trash = DirectGuiWrapper(
                 DirectButton,
                 btn.value,
-                geom=self.__get_trash_can(),
+                geom=models.get_gui_element("trash_can"),
                 command=lambda: self.run_callback_at(idx, remove_callback),
                 relief=None,
                 scale=0.3,
