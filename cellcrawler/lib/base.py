@@ -10,6 +10,7 @@ from direct.task.Task import TaskManager
 from panda3d.core import Camera, CollisionTraverser, NodePath, VirtualFileSystem, load_prc_file_data
 from rich.traceback import install
 
+from cellcrawler.core.roguelike_calc_tree import LevelTree
 from cellcrawler.maze.block_factory import BlockFactory
 from cellcrawler.maze.maze_data import MazeData
 
@@ -67,7 +68,17 @@ class RootNodes:
 @final
 class DependencyInjector:
     bound_types: ClassVar[dict[type[Any], Any]] = {}
-    valid_types = {Loader, FileLoader, RootNodes, MazeData, BlockFactory, TaskManager, CollisionTraverser, ShowBase}
+    valid_types = {
+        Loader,
+        FileLoader,
+        RootNodes,
+        MazeData,
+        BlockFactory,
+        TaskManager,
+        CollisionTraverser,
+        ShowBase,
+        LevelTree,
+    }
 
     def __init__(self) -> Never:
         raise ValueError("Don't create DependencyInjector")
@@ -96,6 +107,10 @@ class DependencyInjector:
     @classmethod
     def set_block_factory(cls, factory: BlockFactory):
         cls.bound_types[BlockFactory] = factory
+
+    @classmethod
+    def set_level_tree(cls, tree: LevelTree):
+        cls.bound_types[LevelTree] = tree
 
     @classmethod
     def inject[T, R, **P](cls, func: Callable[Concatenate[T, P], R]) -> Callable[[T], R]:

@@ -4,6 +4,7 @@ from typing import final, override
 from panda3d.core import NodePath, Vec3
 
 from cellcrawler.character.player import Player
+from cellcrawler.core.roguelike_calc_tree import LevelTree
 from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNodePath
 from cellcrawler.maze.block_factory import BlockFactory
@@ -20,6 +21,7 @@ class Environment(ManagedNodePath):
             (x, y) for x in range(maze.width) for y in range(maze.height) if maze.cells[y][x] == MazeCell.OPEN
         ]
         super().__init__(None)
+        self.calc_node = LevelTree()
 
     def __get_position(self, x: int, y: int):
         return Vec3(x, -y, 0) * self.SCALE

@@ -1,10 +1,9 @@
 from typing import override
 
-from direct.showbase.Loader import Loader
 from panda3d.core import NodePath
 
-from cellcrawler.lib.base import inject_globals
 from cellcrawler.lib.managed_node import ManagedNodePath
+from cellcrawler.lib.model_repository import models
 from cellcrawler.maze.block_factory import BlockFactory
 
 
@@ -14,6 +13,5 @@ class StandardBlockFactory(BlockFactory):
         return None
 
     @override
-    @inject_globals
-    def _create_wall(self, loader: Loader) -> NodePath | ManagedNodePath | None:
-        return loader.load_model("world/wall.bam", okMissing=False)
+    def _create_wall(self) -> NodePath | ManagedNodePath | None:
+        return models.load_model("world/wall")

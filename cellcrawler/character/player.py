@@ -2,7 +2,6 @@ import functools
 from typing import final, override
 
 from direct.showbase.DirectObject import DirectObject
-from direct.showbase.Loader import Loader
 from panda3d.core import CollisionCapsule, CollisionHandlerPusher, CollisionTraverser, NodePath, Vec3
 
 from cellcrawler.character.character import Character
@@ -18,17 +17,23 @@ from cellcrawler.character.character_command import (
     adjust_for_hpr,
 )
 from cellcrawler.character.command_builder import CommandBuilder
+from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
+from cellcrawler.inventory.datastore import Inventory
+from cellcrawler.inventory.gui import InventoryGUI
+from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
 from cellcrawler.lib.base import RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
+from cellcrawler.lib.model_repository import models
+from cellcrawler.lib.p3d_utils import toggle_vis
 
 
 @final
-class Player(Character):
+class Player(Character[PlayerNode]):
     @override
     @inject_globals
-    def _load(self, loader: Loader, ctrav: CollisionTraverser) -> NodePath:
+    def _load(self, ctrav: CollisionTraverser) -> NodePath:
         # TODO: this model is temporary
-        model = loader.load_model("characters/player.bam", okMissing=False)
+        model = models.load_model("characters/player")
         model.set_scale(0.5)
         model.set_color_scale((1, 1, 0, 1))
         # NOTE: don't use CollisionSphere, it can pass through walls due to an apparent bug in panda3d
@@ -37,6 +42,10 @@ class Player(Character):
         self.pusher.add_collider(collider, model)
         ctrav.add_collider(collider, self.pusher)
         return model
+
+    @override
+    def create_calc_node(self, parent: LevelTree) -> PlayerNode:
+        return PlayerNode(parent)
 
     def __init__(self, parent: ManagedNode | None) -> None:
         self.pusher = CollisionHandlerPusher()
@@ -64,6 +73,12 @@ class Player(Character):
         self.key_tracker.accept("d-up", functools.partial(self.remove_command, move_builder, "d"))
         self.key_tracker.accept("q-up", functools.partial(self.remove_command, rotate_builder, "q"))
         self.key_tracker.accept("e-up", functools.partial(self.remove_command, rotate_builder, "e"))
+
+        self.inventory = Inventory(self.calc_node, [SpeedAmulet()])
+        self.inventory_gui = InventoryGUI(self, self.inventory)
+        self.inventory_gui.frame.hide()
+        # TODO: might need a GUI manager
+        self.key_tracker.accept("i", functools.partial(toggle_vis, self.inventory_gui.frame))
 
     @inject_globals
     def configure_camera(self, nodes: RootNodes):

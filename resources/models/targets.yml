@@ -5,3 +5,15 @@ targets:
   characters:
     model_path: characters
     texture_path: characters
+  gui:
+    model_path: gui
+    texture_path: gui
+    callback_type: 2d-palette
+    parameters:
+      palettize: '1024'
+      downscale: '256'
+    overrides:
+      elements:
+        parameters:
+          downscale: false
+          texture_cards: '512'
