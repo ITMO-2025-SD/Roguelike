@@ -3,7 +3,6 @@ from collections.abc import Callable
 from typing import final, override
 from uuid import UUID
 
-from direct.gui import DirectGuiGlobals
 from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectLabel import DirectLabel
@@ -45,17 +44,24 @@ class ItemFrame:
         model = loader.load_model("gui/elements.bam", okMissing=False)
         return model.find("**/trash_can")
 
+    @inject_globals
+    def __get_inventory_square(self, loader: Loader):
+        model = loader.load_model("gui/elements.bam", okMissing=False)
+        return model.find("**/inventory_square")
+
     def make_button(self, idx: int, remove_callback: Callable[[UUID], None] | None) -> DirectGuiWrapper[DirectButton]:
         nodepath = NodePathComputed(functools.partial(self.get_node_at, idx))
         btn = DirectGuiWrapper(
             DirectButton,
             parent=self.node,
-            image=nodepath,
-            relief=DirectGuiGlobals.SUNKEN,
+            relief=None,
+            geom=self.__get_inventory_square(),
             frameSize=(-BUTTON_SIZE / 2, BUTTON_SIZE / 2, -BUTTON_SIZE / 2, BUTTON_SIZE / 2),
-            image_scale=BUTTON_SIZE,
+            geom_scale=BUTTON_SIZE * 2,
             command=lambda: self.run_callback_at(idx, self.callback),
         )
+        item = DirectGuiWrapper(DirectFrame, parent=btn.value, image=nodepath, image_scale=BUTTON_SIZE, relief=None)
+        btn.children.append(item)
         if remove_callback is not None:
             trash = DirectGuiWrapper(
                 DirectButton,
