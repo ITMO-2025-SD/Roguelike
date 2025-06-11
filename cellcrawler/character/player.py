@@ -3,7 +3,8 @@ from typing import final, override
 
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.Loader import Loader
-from panda3d.core import CollisionCapsule, CollisionHandlerPusher, CollisionTraverser, NodePath, Vec3
+from panda3d.core import CollisionCapsule, CollisionHandlerPusher, CollisionTraverser, NodePath, Vec3, MouseWatcher, WindowProperties
+from direct.task.Task import TaskManager
 
 from cellcrawler.character.character import Character
 from cellcrawler.character.character_command import (
@@ -18,12 +19,16 @@ from cellcrawler.character.character_command import (
     adjust_for_hpr,
 )
 from cellcrawler.character.command_builder import CommandBuilder
+from cellcrawler.lib import base
 from cellcrawler.lib.base import RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
+from direct.showbase.ShowBase import ShowBase
 
 
 @final
 class Player(Character):
+    MOUSE_SENSITIVITY = 0.5
+
     @override
     @inject_globals
     def _load(self, loader: Loader, ctrav: CollisionTraverser) -> NodePath:
@@ -38,15 +43,26 @@ class Player(Character):
         ctrav.add_collider(collider, self.pusher)
         return model
 
-    def __init__(self, parent: ManagedNode | None) -> None:
+    def __init__(self, parent: ManagedNode | None, mouse_watcher: MouseWatcher, task_manager: TaskManager, win_properties: WindowProperties) -> None:
         self.pusher = CollisionHandlerPusher()
         self.pusher.set_horizontal(True)
         super().__init__(parent)
+        self._mouse_watcher = mouse_watcher
+        self._win_properties = win_properties
+        
+        self._base = base
+        
         self.key_tracker = DirectObject()
         self.move_commands: dict[str, Vec3] = {}
-
+        self.__is_mouse1_held = False
+        self.__last_mouse_x = 0
+        
         self.configure_camera()
-
+        
+        self.key_tracker.accept("mouse1", self.__start_holding_mouse1)
+        self.key_tracker.accept("mouse1-up", self.__stop_holding_mouse1)
+        task_manager.add(self.__update_mouse_hold, "mouse_hold")
+        
         move_builder = CommandBuilder(
             CommandType.MOVE, lambda c: MovementCommand(c, adjust_for_hpr), lambda x: lambda: x, CompositeDelta
         )
@@ -67,10 +83,10 @@ class Player(Character):
 
     @inject_globals
     def configure_camera(self, nodes: RootNodes):
-        # Rudimentary camera looking down. Should adjust placement later.
+        # First-person camera
         nodes.camera.reparent_to(self.node)
-        nodes.camera.set_hpr(0, -90, 0)
-        nodes.camera.set_pos(0, 0, 15)
+        nodes.camera.set_hpr(0, 0, 0)
+        nodes.camera.set_pos(0, 0, 1.5)
 
     def add_command[T](self, builder: CommandBuilder[T], key: str, value: T):
         command = builder.add(key, value)
@@ -82,5 +98,29 @@ class Player(Character):
 
     @override
     def destroy(self):
-        self.key_tracker.ignore_all()
+        self.key_tracker.ignore("mouse_hold")
+        self.key_tracker.ignore("mouse1")
+        self.key_tracker.ignore("mouse1-up")
         return super().destroy()
+
+    def __start_holding_mouse1(self):
+        self.__is_mouse1_held = True
+
+    def __stop_holding_mouse1(self):
+        self.__is_mouse1_held = False
+        self.set_command(CommandType.ROTATE, None)
+
+    def __update_mouse_hold(self, task):
+        if self.__is_mouse1_held:
+            if self._mouse_watcher.hasMouse():
+                current_x = self._mouse_watcher.getMouseX()
+                delta = current_x - self.__last_mouse_x
+                if abs(delta) > 0.0001:
+                    rotation_speed = int(-delta * self.MOUSE_SENSITIVITY * 500)
+                    self.set_command(CommandType.ROTATE, RotationCommand(rotation_speed))
+                self.__last_mouse_x = current_x
+        return task.cont
+    
+    def __get_window_center(self):
+        props = self._win_properties
+        return (props.get_x_size() // 2, props.get_y_size() // 2)

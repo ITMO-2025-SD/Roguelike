@@ -1,7 +1,8 @@
 import random
 from typing import final, override
 
-from panda3d.core import NodePath, Vec3
+from panda3d.core import NodePath, Vec3, MouseWatcher, WindowProperties
+from direct.task.Task import TaskManager
 
 from cellcrawler.character.player import Player
 from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
@@ -41,8 +42,9 @@ class Environment(ManagedNodePath):
     def choose_open_pos(self):
         return random.choice(self.open_positions)
 
-    def spawn_player(self):
-        player = Player(self)
+    @inject_globals
+    def spawn_player(self, mouse_watcher: MouseWatcher, task_manager: TaskManager, win_properties: WindowProperties):
+        player = Player(parent=self, mouse_watcher=mouse_watcher, task_manager=task_manager, win_properties=win_properties)
         player.node.reparent_to(self.node)
         player.node.set_pos(self.__get_position(*self.choose_open_pos()))
         return player
