@@ -1,20 +1,20 @@
 import random
 from typing import final, override
 
-from panda3d.core import NodePath, Vec3
+from panda3d.core import NodePath
 
+from cellcrawler.character.mob import Mob
 from cellcrawler.character.player import Player
 from cellcrawler.core.roguelike_calc_tree import LevelTree
 from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNodePath
 from cellcrawler.maze.block_factory import BlockFactory
+from cellcrawler.maze.blockpos_utils import MAZE_SCALE, maze_to_world_position
 from cellcrawler.maze.maze_data import MazeCell, MazeData
 
 
 @final
 class Environment(ManagedNodePath):
-    SCALE = 1
-
     def __init__(self, maze: MazeData) -> None:
         self.maze = maze
         self.open_positions = [
@@ -23,9 +23,6 @@ class Environment(ManagedNodePath):
         super().__init__(None)
         self.calc_node = LevelTree()
 
-    def __get_position(self, x: int, y: int):
-        return Vec3(x, -y, 0) * self.SCALE
-
     @override
     @inject_globals
     def _load(self, factory: BlockFactory, nodes: RootNodes) -> NodePath:
@@ -33,9 +30,9 @@ class Environment(ManagedNodePath):
         maze_np = NodePath("environment")
         for i, row in enumerate(self.maze.cells):
             for j, cell in enumerate(row):
-                cell_node = factory.create(cell, self.SCALE)
+                cell_node = factory.create(cell, MAZE_SCALE)
                 if cell_node:
-                    cell_node.set_pos(self.__get_position(j, i))
+                    cell_node.set_pos(maze_to_world_position(j, i))
                     cell_node.reparent_to(maze_np)
         maze_np.reparent_to(nodes.render)
         return maze_np
@@ -46,5 +43,10 @@ class Environment(ManagedNodePath):
     def spawn_player(self):
         player = Player(self)
         player.node.reparent_to(self.node)
-        player.node.set_pos(self.__get_position(*self.choose_open_pos()))
+        open_pos = self.choose_open_pos()
+        self.maze.set_occupied(open_pos)
+        player.node.set_pos(maze_to_world_position(*open_pos))
         return player
+
+    def spawn_mob(self, mob: Mob):
+        mob.node.reparent_to(self.node)

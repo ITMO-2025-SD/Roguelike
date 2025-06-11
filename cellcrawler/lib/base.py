@@ -1,7 +1,7 @@
 import dataclasses
 import inspect
 from collections.abc import Callable
-from typing import Any, ClassVar, Concatenate, Literal, Never, final, overload
+from typing import Any, ClassVar, Concatenate, Literal, Never, cast, final, overload
 
 from direct.showbase.Loader import Loader
 from direct.showbase.ShowBase import ShowBase
@@ -113,22 +113,30 @@ class DependencyInjector:
         cls.bound_types[LevelTree] = tree
 
     @classmethod
+    def get[T](cls, clazz: type[T]) -> T:
+        if clazz not in cls.valid_types:
+            raise ValueError(f"Invalid injected type: {clazz}")
+        if clazz not in cls.bound_types:
+            raise ValueError(f"Object does not exist yet: {clazz}")
+        return cast(T, cls.bound_types[clazz])
+
+    @classmethod
     def inject[T, R, **P](cls, func: Callable[Concatenate[T, P], R]) -> Callable[[T], R]:
         ann = inspect.get_annotations(func)
         ann.pop("return", None)
         ann.pop("self", None)
 
-        for typ in ann.values():
-            if typ not in cls.valid_types:
-                raise ValueError(f"Invalid injected type: {typ}")
+        for clazz in ann.values():
+            if clazz not in cls.valid_types:
+                raise ValueError(f"Invalid injected type: {clazz}")
 
         def injected(self: T):
             new_kwargs: dict[str, object] = {}
-            for key, typ in ann.items():
-                if typ not in cls.bound_types:
-                    raise ValueError(f"Object does not exist yet: {typ}")
+            for key, clazz in ann.items():
+                if clazz not in cls.bound_types:
+                    raise ValueError(f"Object does not exist yet: {clazz}")
 
-                new_kwargs[key] = cls.bound_types[typ]
+                new_kwargs[key] = cls.bound_types[clazz]
             return func(self, **new_kwargs)  # pyright: ignore[reportCallIssue]
 
         return injected

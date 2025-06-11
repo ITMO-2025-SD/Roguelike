@@ -1,0 +1,67 @@
+import dataclasses
+import heapq
+from typing import final, override
+
+from direct.task.Task import Task, TaskManager
+
+from cellcrawler.character.character_command import CommandType
+from cellcrawler.character.mob import Mob
+from cellcrawler.character.mob_factory import MobFactory
+from cellcrawler.core.environment import Environment
+from cellcrawler.lib.base import DependencyInjector
+from cellcrawler.lib.managed_node import ManagedNode
+
+
+@final
+class MobManager(ManagedNode):
+    TASK_RESTART_DELAY = 8
+
+    def __init__(self, parent: Environment):
+        super().__init__(parent)
+        task_manager = DependencyInjector.get(TaskManager)
+        self.mobs: set[Mob] = set()
+        self.mob_command_restarts: list[tuple[float, Mob]] = []
+        self.__commandsetting_task = task_manager.add(self.__set_commands, "restart-mob-commands")
+
+    def __set_commands(self, task: Task):
+        time_passed = task.time
+        while self.mob_command_restarts and self.mob_command_restarts[0][0] <= time_passed:
+            _, mob = heapq.heappop(self.mob_command_restarts)
+            if not self.set_command_for(mob):
+                heapq.heappush(self.mob_command_restarts, (time_passed + self.TASK_RESTART_DELAY, mob))
+        return task.cont
+
+    def set_command_for(self, mob: Mob):
+        if not mob.strategy:
+            return False
+        command = mob.strategy.make_command(mob.get_cell_pos())
+        mob.set_command(CommandType.MOB_MOVEMENT, command)
+        return command is not None
+
+    def add(self, mob_: Mob):
+        def set_new_command(mob: Mob, done_commands: list[CommandType]):
+            if CommandType.MOB_MOVEMENT in done_commands:
+                # Attempt to set the command in the next game tick
+                heapq.heappush(self.mob_command_restarts, (-1, mob))
+
+        mob_.run_on_command_done(set_new_command)
+        # Also run this immediately
+        heapq.heappush(self.mob_command_restarts, (-1, mob_))
+
+    @override
+    def _cleanup(self) -> None:
+        self.__commandsetting_task.remove()
+
+
+@dataclasses.dataclass
+class SpawnBlackboard:
+    env: Environment
+    mob_mgr: MobManager
+    mob_factory: MobFactory
+
+    def spawn_random_mob_at(self, pos: tuple[int, int]):
+        mob = self.mob_factory.create(self.env)
+        if mob:
+            mob.move_to(pos)
+            self.mob_mgr.add(mob)
+            self.env.spawn_mob(mob)
