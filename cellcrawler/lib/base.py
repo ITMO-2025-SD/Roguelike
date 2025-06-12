@@ -7,7 +7,7 @@ from direct.showbase.Loader import Loader
 from direct.showbase.ShowBase import ShowBase
 from direct.stdpy import file
 from direct.task.Task import TaskManager
-from panda3d.core import Camera, CollisionTraverser, NodePath, VirtualFileSystem, load_prc_file_data
+from panda3d.core import Camera, ClockObject, CollisionTraverser, NodePath, VirtualFileSystem, load_prc_file_data
 from rich.traceback import install
 
 from cellcrawler.core.roguelike_calc_tree import LevelTree
@@ -78,6 +78,7 @@ class DependencyInjector:
         CollisionTraverser,
         ShowBase,
         LevelTree,
+        ClockObject,
     }
 
     def __init__(self) -> Never:
@@ -99,6 +100,7 @@ class DependencyInjector:
         )
         cls.bound_types[TaskManager] = base.task_mgr
         cls.bound_types[CollisionTraverser] = base.cTrav
+        cls.bound_types[ClockObject] = ClockObject.get_global_clock()
 
     @classmethod
     def set_maze(cls, maze: MazeData):

@@ -3,7 +3,7 @@ from collections.abc import Callable
 from typing import Final, Generic, Self, TypeVar, override
 
 from direct.task.Task import Task, TaskManager
-from panda3d.core import CollisionNode
+from panda3d.core import ClockObject, CollisionNode
 
 from cellcrawler.character.character_command import CharacterCommand, CommandType
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, LevelTree
@@ -62,7 +62,7 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
     def __exec_command(self, task: Task):
         removed_commands: list[CommandType] = []
         for key, command in self.__commands.items():
-            command.run(self.node, self.calc_node, task.dt)
+            command.run(self.node, self.calc_node, DependencyInjector.get(ClockObject).dt)
             if command.done:
                 removed_commands.append(key)
         self.__update_occupied_position()
