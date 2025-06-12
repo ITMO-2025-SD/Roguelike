@@ -1,5 +1,6 @@
 import abc
-from typing import override
+from collections.abc import Callable
+from typing import Self, override
 
 from direct.actor.Actor import Actor
 from direct.gui.DirectGuiBase import DirectGuiWidget
@@ -15,10 +16,17 @@ class ManagedNode(abc.ABC):
         self.__removed = False
         if parent is not None:
             parent.children.add(self)
+        self.__destruction_callbacks: list[Callable[[Self], None]] = []
+
+    def run_before_destruction(self, callback: Callable[[Self], None]):
+        self.__destruction_callbacks.append(callback)
 
     def destroy(self):
         if self.__removed:
             raise RuntimeError(f"Node {self} removed twice")
+        for c in self.__destruction_callbacks:
+            c(self)
+        self.__destruction_callbacks = []
         self.__removed = True
         for c in self.children:
             c.destroy()

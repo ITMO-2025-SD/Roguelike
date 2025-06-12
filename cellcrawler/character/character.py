@@ -26,12 +26,16 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         self.__command_task = task_manager.add(self.__exec_command, f"exec-character-commands-{id(self)}")
         self.__on_command_done: list[Callable[[Self, list[CommandType]], None]] = []
         self.__prev_position: tuple[int, int] = (-1, -1)
+        self.__on_cell_change: list[Callable[[Self], None]] = []
 
     def move_to(self, maze_pos: tuple[int, int]):
         self.node.set_pos(maze_to_world_position(*maze_pos))
 
     def run_on_command_done(self, func: Callable[[Self, list[CommandType]], None]):
         self.__on_command_done.append(func)
+
+    def run_on_cell_change(self, func: Callable[[Self], None]):
+        self.__on_cell_change.append(func)
 
     def get_cell_pos(self):
         return world_to_maze_position(self.node.get_pos())
@@ -58,6 +62,8 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
                 maze.clear_occupied(self.__prev_position)
             self.__prev_position = new_position
             maze.set_occupied(new_position)
+            for cmd in self.__on_cell_change:
+                cmd(self)
 
     def __exec_command(self, task: Task):
         removed_commands: list[CommandType] = []

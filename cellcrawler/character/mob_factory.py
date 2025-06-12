@@ -12,10 +12,10 @@ class MobFactory(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_strategy(self) -> MobStrategy:
+    def get_strategy(self, mob: Mob) -> MobStrategy:
         pass
 
     def create(self, env: Environment):
         mob = self.get_constructor()(env)
-        mob.set_strategy(self.get_strategy())
+        mob.set_strategy(self.get_strategy(mob))
         return mob

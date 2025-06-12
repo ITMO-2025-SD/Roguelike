@@ -32,6 +32,18 @@ class MazeData:
         if not self.occupations[pos]:
             del self.occupations[pos]
 
+    def get_adjacent(self, x: int, y: int):
+        out: list[tuple[int, int]] = []
+        if x > 0 and is_visitable(self.cells[y][x - 1]):
+            out.append((x - 1, y))
+        if x + 1 < len(self.cells[0]) and is_visitable(self.cells[y][x + 1]):
+            out.append((x + 1, y))
+        if y > 0 and is_visitable(self.cells[y - 1][x]):
+            out.append((x, y - 1))
+        if y + 1 < len(self.cells) and is_visitable(self.cells[y + 1][x]):
+            out.append((x, y + 1))
+        return out
+
     def __post_init__(self):
         if not self.cells:
             raise ValueError("must have >= 1 row")

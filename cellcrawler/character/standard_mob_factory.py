@@ -3,7 +3,7 @@ from typing import final, override
 
 from cellcrawler.character.mob import Mob
 from cellcrawler.character.mob_factory import MobFactory
-from cellcrawler.character.mob_strategy import AfterBarStrategy, MobStrategy
+from cellcrawler.character.mob_strategy import AfterBarStrategy, CalcTreeMovementOverride, MobStrategy
 from cellcrawler.character.mobs.doppelganger import Doppelganger
 from cellcrawler.core.environment import Environment
 
@@ -15,5 +15,5 @@ class StandardMobFactory(MobFactory):
         return Doppelganger
 
     @override
-    def get_strategy(self) -> MobStrategy:
-        return AfterBarStrategy()
+    def get_strategy(self, mob: Mob) -> MobStrategy:
+        return CalcTreeMovementOverride(AfterBarStrategy(), mob.calc_node)
