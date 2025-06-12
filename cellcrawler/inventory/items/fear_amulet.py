@@ -11,7 +11,7 @@ from cellcrawler.lib.model_repository import models
 class FearAmulet(InventoryItem):
     """Placeholder item."""
 
-    MAX_FEAR_DISTANCE = 100
+    MAX_FEAR_DISTANCE = 2
 
     def __init__(self):
         super().__init__(ItemCategory.AMULET)
