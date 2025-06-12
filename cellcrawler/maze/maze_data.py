@@ -1,4 +1,5 @@
 import dataclasses
+from collections import Counter
 from enum import Enum, auto
 
 
@@ -10,9 +11,38 @@ class MazeCellBasic(Enum):
 MazeCell = MazeCellBasic
 
 
+def is_visitable(cell: MazeCell):
+    match cell:
+        case MazeCellBasic.OPEN:
+            return True
+        case MazeCellBasic.WALL:
+            return False
+
+
 @dataclasses.dataclass
 class MazeData:
     cells: list[list[MazeCell]]
+    occupations: dict[tuple[int, int], int] = dataclasses.field(default_factory=Counter[tuple[int, int]])
+
+    def set_occupied(self, pos: tuple[int, int]):
+        self.occupations[pos] += 1
+
+    def clear_occupied(self, pos: tuple[int, int]):
+        self.occupations[pos] -= 1
+        if not self.occupations[pos]:
+            del self.occupations[pos]
+
+    def get_adjacent(self, x: int, y: int):
+        out: list[tuple[int, int]] = []
+        if x > 0 and is_visitable(self.cells[y][x - 1]):
+            out.append((x - 1, y))
+        if x + 1 < len(self.cells[0]) and is_visitable(self.cells[y][x + 1]):
+            out.append((x + 1, y))
+        if y > 0 and is_visitable(self.cells[y - 1][x]):
+            out.append((x, y - 1))
+        if y + 1 < len(self.cells) and is_visitable(self.cells[y + 1][x]):
+            out.append((x, y + 1))
+        return out
 
     def __post_init__(self):
         if not self.cells:

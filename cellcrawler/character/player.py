@@ -20,11 +20,13 @@ from cellcrawler.character.command_builder import CommandBuilder
 from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
+from cellcrawler.inventory.items.fear_amulet import FearAmulet
 from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
 from cellcrawler.lib.base import RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
 from cellcrawler.lib.model_repository import models
 from cellcrawler.lib.p3d_utils import toggle_vis
+from cellcrawler.maze.pathfinding.character_pathfinding import CharacterPathfinding
 
 
 @final
@@ -45,12 +47,14 @@ class Player(Character[PlayerNode]):
 
     @override
     def create_calc_node(self, parent: LevelTree) -> PlayerNode:
-        return PlayerNode(parent)
+        return PlayerNode(parent, self.pathfinder)
 
     def __init__(self, parent: ManagedNode | None) -> None:
         self.pusher = CollisionHandlerPusher()
         self.pusher.set_horizontal(True)
+        self.pathfinder = CharacterPathfinding(self)
         super().__init__(parent)
+        self.pathfinder.start()
         self.key_tracker = DirectObject()
         self.move_commands: dict[str, Vec3] = {}
 
@@ -74,7 +78,7 @@ class Player(Character[PlayerNode]):
         self.key_tracker.accept("q-up", functools.partial(self.remove_command, rotate_builder, "q"))
         self.key_tracker.accept("e-up", functools.partial(self.remove_command, rotate_builder, "e"))
 
-        self.inventory = Inventory(self.calc_node, [SpeedAmulet()])
+        self.inventory = Inventory(self.calc_node, [SpeedAmulet(), FearAmulet()])
         self.inventory_gui = InventoryGUI(self, self.inventory)
         self.inventory_gui.frame.hide()
         # TODO: might need a GUI manager

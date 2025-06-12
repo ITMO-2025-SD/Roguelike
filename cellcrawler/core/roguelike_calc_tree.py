@@ -1,8 +1,10 @@
-from typing import Any, Generic
+from dataclasses import dataclass
+from typing import Any, Generic, final
 
 from typing_extensions import TypeVar
 
 from cellcrawler.lib.calculation_tree import MathTarget, Node, RootNode
+from cellcrawler.maze.pathfinding.pathfinding import PathfindingService
 
 GN_co = TypeVar("GN_co", bound="GameNode[Any]", default="GameNode[Any]", covariant=True)
 
@@ -21,8 +23,17 @@ class CharacterNode(GameNode[LevelTree]):
     pass
 
 
+@final
 class PlayerNode(CharacterNode):
-    pass
+    def __init__(self, parent: LevelTree, pathfinding: PathfindingService):
+        super().__init__(parent)
+        self.pathfinding = pathfinding
+
+
+@dataclass
+class NextCellContext:
+    start_pos: tuple[int, int]
 
 
 CharacterSpeed = MathTarget[float, CharacterNode]("CharacterSpeed")
+MobNextCell = MathTarget[tuple[int, int] | None, NextCellContext]("MobNextCell")
