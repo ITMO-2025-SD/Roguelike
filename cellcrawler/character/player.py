@@ -20,6 +20,7 @@ from cellcrawler.character.command_builder import CommandBuilder
 from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
+from cellcrawler.inventory.items.fear_amulet import FearAmulet
 from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
 from cellcrawler.lib.base import RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
@@ -77,7 +78,7 @@ class Player(Character[PlayerNode]):
         self.key_tracker.accept("q-up", functools.partial(self.remove_command, rotate_builder, "q"))
         self.key_tracker.accept("e-up", functools.partial(self.remove_command, rotate_builder, "e"))
 
-        self.inventory = Inventory(self.calc_node, [SpeedAmulet()])
+        self.inventory = Inventory(self.calc_node, [SpeedAmulet(), FearAmulet()])
         self.inventory_gui = InventoryGUI(self, self.inventory)
         self.inventory_gui.frame.hide()
         # TODO: might need a GUI manager
