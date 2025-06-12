@@ -12,23 +12,34 @@ from cellcrawler.lib.base import DependencyInjector
 from cellcrawler.lib.managed_node import ManagedNode
 
 
+@dataclasses.dataclass
+class MobCommandRestart:
+    time: float
+    mob: Mob
+
+    def __lt__(self, other: "MobCommandRestart"):
+        return self.time < other.time
+
+
 @final
 class MobManager(ManagedNode):
-    TASK_RESTART_DELAY = 8
+    TASK_RESTART_DELAY = 3
 
     def __init__(self, parent: Environment):
         super().__init__(parent)
         task_manager = DependencyInjector.get(TaskManager)
         self.mobs: set[Mob] = set()
-        self.mob_command_restarts: list[tuple[float, Mob]] = []
+        self.mob_command_restarts: list[MobCommandRestart] = []
         self.__commandsetting_task = task_manager.add(self.__set_commands, "restart-mob-commands")
 
     def __set_commands(self, task: Task):
         time_passed = task.time
-        while self.mob_command_restarts and self.mob_command_restarts[0][0] <= time_passed:
-            _, mob = heapq.heappop(self.mob_command_restarts)
-            if not self.set_command_for(mob):
-                heapq.heappush(self.mob_command_restarts, (time_passed + self.TASK_RESTART_DELAY, mob))
+        while self.mob_command_restarts and self.mob_command_restarts[0].time <= time_passed:
+            data = heapq.heappop(self.mob_command_restarts)
+            if not self.set_command_for(data.mob):
+                heapq.heappush(
+                    self.mob_command_restarts, MobCommandRestart(time_passed + self.TASK_RESTART_DELAY, data.mob)
+                )
         return task.cont
 
     def set_command_for(self, mob: Mob):
@@ -42,11 +53,11 @@ class MobManager(ManagedNode):
         def set_new_command(mob: Mob, done_commands: list[CommandType]):
             if CommandType.MOB_MOVEMENT in done_commands:
                 # Attempt to set the command in the next game tick
-                heapq.heappush(self.mob_command_restarts, (-1, mob))
+                heapq.heappush(self.mob_command_restarts, MobCommandRestart(-1, mob))
 
         mob_.run_on_command_done(set_new_command)
         # Also run this immediately
-        heapq.heappush(self.mob_command_restarts, (-1, mob_))
+        heapq.heappush(self.mob_command_restarts, MobCommandRestart(-1, mob_))
 
     @override
     def _cleanup(self) -> None:
