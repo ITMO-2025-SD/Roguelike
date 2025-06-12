@@ -15,5 +15,5 @@ class StandardMobFactory(MobFactory):
         return Doppelganger
 
     @override
-    def get_strategy(self, mob: Mob) -> MobStrategy:
+    def get_default_strategy(self, mob: Mob) -> MobStrategy:
         return CalcTreeMovementOverride(AfterBarStrategy(), mob.calc_node)
