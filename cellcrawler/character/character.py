@@ -1,18 +1,26 @@
 import abc
+import math
 from collections.abc import Callable
-from typing import Final, Generic, Self, TypeVar, override
+from enum import Enum, auto
+from typing import Any, Final, Generic, Self, TypeVar, override
 
 from direct.task.Task import Task, TaskManager
-from panda3d.core import ClockObject, CollisionNode
+from panda3d.core import ClockObject, CollisionNode, NodePath
 
-from cellcrawler.character.character_command import CharacterCommand, CommandType
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, LevelTree
 from cellcrawler.lib.base import DependencyInjector, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode, ManagedNodePath
+from cellcrawler.lib.model_repository import models
 from cellcrawler.maze.blockpos_utils import maze_to_world_position, world_to_maze_position
 from cellcrawler.maze.maze_data import MazeData
 
 CalcNodeT = TypeVar("CalcNodeT", bound=CharacterNode)
+
+
+class CommandType(Enum):
+    MOVE = auto()
+    ROTATE = auto()
+    MOB_MOVEMENT = auto()
 
 
 class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
@@ -48,7 +56,7 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
     def create_calc_node(self, parent: LevelTree) -> CalcNodeT:
         pass
 
-    def set_command(self, key: CommandType, command: CharacterCommand | None):
+    def set_command(self, key: CommandType, command: "CharacterCommand | None"):
         if command is None:
             self.__commands.pop(key, None)
         else:
@@ -68,7 +76,7 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
     def __exec_command(self, task: Task):
         removed_commands: list[CommandType] = []
         for key, command in self.__commands.items():
-            command.run(self.node, self.calc_node, DependencyInjector.get(ClockObject).dt)
+            command.run(self, DependencyInjector.get(ClockObject).dt)
             if command.done:
                 removed_commands.append(key)
         self.__update_occupied_position()
@@ -83,3 +91,14 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
     def destroy(self):
         self.__command_task.remove()
         return super().destroy()
+
+
+class CharacterCommand(abc.ABC):
+    done: bool = False
+
+    def set_done(self):
+        self.done = True
+
+    @abc.abstractmethod
+    def run(self, character: Character[Any], dt: float) -> None:
+        pass

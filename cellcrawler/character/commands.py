@@ -1,33 +1,14 @@
-import abc
 import math
 from collections.abc import Callable, Collection
-from enum import Enum, auto
-from typing import final, override
+from typing import Any, final, override
 
 from panda3d.core import NodePath, Vec3
 
+from cellcrawler.character.character import Character, CharacterCommand
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, CharacterSpeed
 from cellcrawler.maze.blockpos_utils import maze_to_world_position
 
-
-class CommandType(Enum):
-    MOVE = auto()
-    ROTATE = auto()
-    MOB_MOVEMENT = auto()
-
-
 AdjusterT = Callable[[Vec3, NodePath], Vec3]
-
-
-class CharacterCommand(abc.ABC):
-    done: bool = False
-
-    def set_done(self):
-        self.done = True
-
-    @abc.abstractmethod
-    def run(self, character: NodePath, node: CharacterNode, dt: float) -> None:
-        pass
 
 
 Forward = Vec3(0, 1, 0)
@@ -56,10 +37,10 @@ class MovementCommand(CharacterCommand):
         return node.calculate(CharacterSpeed, self.SPEED, node)
 
     @override
-    def run(self, character: NodePath, node: CharacterNode, dt: float):
-        pos = character.get_pos()
-        delta = self.delta() if self.adjuster is None else self.adjuster(self.delta(), character)
-        character.set_pos(pos + delta * dt * self.calc_speed(node))
+    def run(self, character: Character[Any], dt: float):
+        pos = character.node.get_pos()
+        delta = self.delta() if self.adjuster is None else self.adjuster(self.delta(), character.node)
+        character.node.set_pos(pos + delta * dt * self.calc_speed(character.calc_node))
 
 
 @final
@@ -84,9 +65,9 @@ class RotationCommand(CharacterCommand):
         self.delta = direction
 
     @override
-    def run(self, character: NodePath, node: CharacterNode, dt: float):
-        h = character.get_h()
-        character.set_h(h + self.delta * dt * self.ROTATION_SPEED)
+    def run(self, character: Character[Any], dt: float):
+        h = character.node.get_h()
+        character.node.set_h(h + self.delta * dt * self.ROTATION_SPEED)
 
 
 @final
@@ -101,9 +82,9 @@ class ProceduralMovement(CharacterCommand):
         self.x, self.y = target_pos
 
     @override
-    def run(self, character: NodePath, node: CharacterNode, dt: float) -> None:
-        forward_vec = character.get_quat().get_forward()
-        pos = character.get_pos()
+    def run(self, character: Character[Any], dt: float) -> None:
+        forward_vec = character.node.get_quat().get_forward()
+        pos = character.node.get_pos()
         target_pos = maze_to_world_position(self.x, self.y)
         target_vec = Vec3(target_pos - pos)
         if target_vec.length() < self.MOVEMENT_CUTOFF:
@@ -113,8 +94,19 @@ class ProceduralMovement(CharacterCommand):
         target_vec.normalize()
         rot_angle = target_vec.angle_rad(forward_vec.normalized())
         if rot_angle > self.ROTATION_CUTOFF:
-            character.set_h(character.get_h() + dt * self.ROTATION_SPEED)
+            character.node.set_h(character.node.get_h() + dt * self.ROTATION_SPEED)
         elif rot_angle < -self.ROTATION_CUTOFF:
-            character.set_h(character.get_h() - dt * self.ROTATION_SPEED)
+            character.node.set_h(character.node.get_h() - dt * self.ROTATION_SPEED)
         else:
-            character.set_pos(pos + target_vec * self.MOVEMENT_SPEED * dt)
+            character.node.set_pos(pos + target_vec * self.MOVEMENT_SPEED * dt)
+
+
+@final
+class Attack(CharacterCommand):
+    def __init__(self) -> None:
+        super().__init__()
+        self.passed_time = 0.0
+
+    @override
+    def run(self, character: Character[Any], dt: float) -> None:
+        pass

@@ -4,10 +4,10 @@ from typing import final, override
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import CollisionCapsule, CollisionHandlerPusher, CollisionTraverser, NodePath, Vec3
 
-from cellcrawler.character.character import Character
-from cellcrawler.character.character_command import (
+from cellcrawler.character.character import Character, CommandType
+from cellcrawler.character.command_builder import CommandBuilder
+from cellcrawler.character.commands import (
     Back,
-    CommandType,
     CompositeDelta,
     Forward,
     Left,
@@ -16,7 +16,6 @@ from cellcrawler.character.character_command import (
     RotationCommand,
     adjust_for_hpr,
 )
-from cellcrawler.character.command_builder import CommandBuilder
 from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI

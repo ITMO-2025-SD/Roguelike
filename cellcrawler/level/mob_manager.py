@@ -4,7 +4,7 @@ from typing import final, override
 
 from direct.task.Task import Task, TaskManager
 
-from cellcrawler.character.character_command import CommandType
+from cellcrawler.character.character import CommandType
 from cellcrawler.character.mob import Mob
 from cellcrawler.character.mob_factory import MobFactory
 from cellcrawler.core.environment import Environment
