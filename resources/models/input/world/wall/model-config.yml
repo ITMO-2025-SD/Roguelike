@@ -1,3 +1,4 @@
 collide:
 - method: box
   flags: keep,descend
+  bitmask: 0x0001

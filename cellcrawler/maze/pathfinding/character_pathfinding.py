@@ -3,6 +3,8 @@ from collections import deque
 from collections.abc import Callable
 from typing import Any, Self, final, override
 
+from direct.directnotify.DirectNotifyGlobal import directNotify
+
 from cellcrawler.character.character import Character
 from cellcrawler.lib.base import DependencyInjector
 from cellcrawler.lib.managed_node import ManagedNode
@@ -12,6 +14,8 @@ from cellcrawler.maze.pathfinding.pathfinding import PathfindingService
 
 @final
 class CharacterPathfinding(PathfindingService):
+    notify = directNotify.newCategory("CharacterPathfinding")
+
     def __init__(self, player: Character[Any]):
         self.distances: list[list[int | None]] = []
         self.__handlers: dict[ManagedNode, Callable[[Self], None]] = {}
@@ -51,11 +55,13 @@ class CharacterPathfinding(PathfindingService):
         distances = [(self.get_distance(x1, y1), (x1, y1)) for x1, y1 in options]
         return [(d, p) for d, p in distances if d is not None]
 
-    @staticmethod
-    def __get_distances(player: Character[Any]) -> list[list[int | None]]:
+    def __get_distances(self, player: Character[Any]) -> list[list[int | None]]:
         maze = DependencyInjector.get(MazeData)
         out: list[list[int | None]] = [[None for _ in row] for row in maze.cells]
         x, y = player.get_cell_pos()
+        if x < 0 or y < 0 or x >= maze.width or y >= maze.height:
+            self.notify.warning(f"Player is not inside the maze: size {maze.width}x{maze.height} position ({x},{y})!")
+            return out
         queue = deque([(x, y, 0)])
         while queue:
             x, y, dist = queue.popleft()

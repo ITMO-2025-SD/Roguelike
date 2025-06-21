@@ -2,7 +2,7 @@ from panda3d.core import Point3, Vec3
 
 type Vec3Like = Point3 | Vec3
 
-MAZE_SCALE = 1
+MAZE_SCALE = 2
 
 
 def maze_to_world_position(x: int, y: int):

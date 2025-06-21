@@ -53,6 +53,8 @@ class KeybindPanel(ManagedGui):
             ("d", "Move right"),
             ("q", "Rotate left"),
             ("r", "Rotate right"),
+            ("i", "Open inventory"),
+            ("space", "Attack"),
         ]
         if self.DEBUG:
             DebugListener(self)

@@ -2,7 +2,8 @@ import abc
 import random
 from typing import final, override
 
-from cellcrawler.character.character_command import CharacterCommand, ProceduralMovement
+from cellcrawler.character.character import CharacterCommand
+from cellcrawler.character.commands import ProceduralMovement
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, MobNextCell, NextCellContext
 from cellcrawler.lib.base import DependencyInjector
 from cellcrawler.maze.maze_data import MazeData

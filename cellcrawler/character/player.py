@@ -2,12 +2,25 @@ import functools
 from typing import final, override
 
 from direct.showbase.DirectObject import DirectObject
-from panda3d.core import CollisionCapsule, CollisionHandlerPusher, CollisionTraverser, NodePath, Vec3
+from panda3d.core import (
+    CollisionCapsule,
+    CollisionHandlerEvent,
+    CollisionHandlerPusher,
+    CollisionTraverser,
+    NodePath,
+    Vec3,
+)
 
-from cellcrawler.character.character import Character
-from cellcrawler.character.character_command import (
-    Back,
+from cellcrawler.character.character import (
+    MOB_BEAM_COLLIDE_MASK,
+    PLAYER_BEAM_COLLIDE_MASK,
+    PUSHER_COLLIDE_MASK,
+    Character,
     CommandType,
+)
+from cellcrawler.character.command_builder import CommandBuilder
+from cellcrawler.character.commands import (
+    Back,
     CompositeDelta,
     Forward,
     Left,
@@ -15,8 +28,8 @@ from cellcrawler.character.character_command import (
     Right,
     RotationCommand,
     adjust_for_hpr,
+    make_attack,
 )
-from cellcrawler.character.command_builder import CommandBuilder
 from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
@@ -32,17 +45,21 @@ from cellcrawler.maze.pathfinding.character_pathfinding import CharacterPathfind
 @final
 class Player(Character[PlayerNode]):
     @override
+    def get_collision_handler(self) -> CollisionHandlerEvent:
+        return self.pusher
+
+    @override
     @inject_globals
     def _load(self, ctrav: CollisionTraverser) -> NodePath:
         # TODO: this model is temporary
         model = models.load_model("characters/player")
         model.set_scale(0.5)
-        model.set_color_scale((1, 1, 0, 1))
+        model.get_child(0).set_color_scale((1, 1, 0, 1))
         # NOTE: don't use CollisionSphere, it can pass through walls due to an apparent bug in panda3d
         self.collision_node.add_solid(CollisionCapsule((0, 0, 0), (0, 0, 0.01), 0.7))
-        collider = model.attach_new_node(self.collision_node)
-        self.pusher.add_collider(collider, model)
-        ctrav.add_collider(collider, self.pusher)
+        beam = self.create_attacking_beam(1, 1.4, 24)
+        beam.set_pos((0, 0.35, 0))
+        beam.reparent_to(model)
         return model
 
     @override
@@ -54,6 +71,12 @@ class Player(Character[PlayerNode]):
         self.pusher.set_horizontal(True)
         self.pathfinder = CharacterPathfinding(self)
         super().__init__(parent)
+        self.pusher.add_collider(self.collider_np, self.node)
+        self.collision_node.set_into_collide_mask(0)
+        self.collision_node.set_from_collide_mask(PUSHER_COLLIDE_MASK | MOB_BEAM_COLLIDE_MASK)
+        self.beam_collider.set_into_collide_mask(PLAYER_BEAM_COLLIDE_MASK)
+        # QueueDebugger(self, "player", self.attacked_mobs_queue)
+        # self.collision_node_pusher.set_into_collide_mask(0)
         self.pathfinder.start()
         self.key_tracker = DirectObject()
         self.move_commands: dict[str, Vec3] = {}
@@ -70,6 +93,7 @@ class Player(Character[PlayerNode]):
         self.key_tracker.accept("d", functools.partial(self.add_command, move_builder, "d", Right))
         self.key_tracker.accept("q", functools.partial(self.add_command, rotate_builder, "q", 1))
         self.key_tracker.accept("e", functools.partial(self.add_command, rotate_builder, "e", -1))
+        self.key_tracker.accept("space", self.exec_attack)
 
         self.key_tracker.accept("w-up", functools.partial(self.remove_command, move_builder, "w"))
         self.key_tracker.accept("a-up", functools.partial(self.remove_command, move_builder, "a"))
@@ -103,3 +127,7 @@ class Player(Character[PlayerNode]):
     def destroy(self):
         self.key_tracker.ignore_all()
         return super().destroy()
+
+    def exec_attack(self):
+        if self.get_command(CommandType.ATTACK) is None:
+            self.set_command(CommandType.ATTACK, make_attack(self))
