@@ -14,6 +14,7 @@ from cellcrawler.character.character import (
     BEAM_INACTIVE_COLOR,
     Character,
     CharacterCommand,
+    characters,
 )
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, CharacterSpeed
 from cellcrawler.maze.blockpos_utils import maze_to_world_position
@@ -131,14 +132,19 @@ ATTACK_ACTIVE_TIME = 0.1
 ATTACK_SLOWDOWN_TIME = 0.54
 
 
-def make_attack(char: Character[Any]) -> CharacterCommand | None:
-    if char.attacking_beam is None:
+def make_attack(attacker: Character[Any]) -> CharacterCommand | None:
+    if attacker.attacking_beam is None:
         return None
+
+    def attack():
+        for char in characters.collisions.get_attacked_chars(attacker):
+            attacker.attack(char)
 
     return IntervalCommand(
         Sequence(  # pyright: ignore[reportCallIssue]
-            LerpColorInterval(char.attacking_beam, ATTACK_WINDUP_TIME, BEAM_ACTIVE_COLOR),
+            LerpColorInterval(attacker.attacking_beam, ATTACK_WINDUP_TIME, BEAM_ACTIVE_COLOR),
+            Func(attack),
             Wait(ATTACK_ACTIVE_TIME),
-            LerpColorInterval(char.attacking_beam, ATTACK_SLOWDOWN_TIME, BEAM_INACTIVE_COLOR),
+            LerpColorInterval(attacker.attacking_beam, ATTACK_SLOWDOWN_TIME, BEAM_INACTIVE_COLOR),
         )
     )

@@ -86,9 +86,8 @@ class ManagedGui(ManagedNode, abc.ABC):
 
 
 class ManagedDirectObject(ManagedNode, abc.ABC):
-    @abc.abstractmethod
     def _load(self) -> DirectObject:
-        pass
+        return DirectObject()
 
     def __init__(self, parent: "ManagedNode | None") -> None:
         super().__init__(parent)

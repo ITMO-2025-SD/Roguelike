@@ -1,11 +1,27 @@
 import abc
+import functools
 import math
+from collections import defaultdict
 from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, Final, Generic, Self, TypeVar, cast, override
+from typing import Any, Final, Generic, Self, TypeVar, cast, final, override
 
+from direct.directnotify.DirectNotifyGlobal import directNotify
+from direct.interval.LerpInterval import LerpColorScaleInterval
+from direct.interval.MetaInterval import Sequence
+from direct.showbase.DirectObject import DirectObject
 from direct.task.Task import Task, TaskManager
-from panda3d.core import BitMask32, ClockObject, CollisionNode, GeomNode, NodePath, Vec4
+from panda3d.core import (
+    BitMask32,
+    ClockObject,
+    CollisionEntry,
+    CollisionHandlerEvent,
+    CollisionNode,
+    CollisionTraverser,
+    GeomNode,
+    NodePath,
+    Vec4,
+)
 
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, LevelTree
 from cellcrawler.lib.base import DependencyInjector, inject_globals
@@ -20,7 +36,8 @@ CalcNodeT = TypeVar("CalcNodeT", bound=CharacterNode)
 BEAM_INACTIVE_COLOR = Vec4(1, 1, 0.7, 1)
 BEAM_ACTIVE_COLOR = Vec4(1, 0.2, 0.2, 1)
 PUSHER_COLLIDE_MASK = BitMask32(0x0001)
-BEAM_COLLIDE_MASK = BitMask32(0x0002)
+PLAYER_BEAM_COLLIDE_MASK = BitMask32(0x0002)
+MOB_BEAM_COLLIDE_MASK = BitMask32(0x0004)
 
 
 class CommandType(Enum):
@@ -31,25 +48,33 @@ class CommandType(Enum):
 
 
 class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
+    @abc.abstractmethod
+    def get_collision_handler(self) -> CollisionHandlerEvent:
+        pass
+
     def __init__(self, parent: ManagedNode | None) -> None:
-        self.collision_node: Final = CollisionNode(f"char-{id(self)}")
-        self.collision_node.set_into_collide_mask(PUSHER_COLLIDE_MASK | BEAM_COLLIDE_MASK)
-        self.collision_node.set_from_collide_mask(PUSHER_COLLIDE_MASK)
         self.__beam: NodePath | None = None
-        self.__beam_collider: Final = CollisionNode(f"beam-{id(self)}")
-        self.__beam_collider.set_collide_mask(BEAM_COLLIDE_MASK)
+        self.collision_node: Final = CollisionNode(f"char-{id(self)}")
+        self.beam_collider: Final = CollisionNode(f"beam-{id(self)}")
         super().__init__(parent)
+        self.collider_np: Final = self.node.attach_new_node(self.collision_node)
 
         self.calc_node: Final = self.__make_calc_node()
         self.__commands: dict[CommandType, CharacterCommand] = {}
         task_manager = DependencyInjector.get(TaskManager)
         self.__command_task = task_manager.add(self.__exec_command, f"exec-character-commands-{id(self)}")
+        ctrav = DependencyInjector.get(CollisionTraverser)
+        self.collider_np.set_python_tag("character", self)
+        ctrav.add_collider(self.collider_np, self.get_collision_handler())
         self.__on_command_done: list[Callable[[Self, list[CommandType]], None]] = []
         self.__prev_position: tuple[int, int] = (-1, -1)
         self.__on_cell_change: list[Callable[[Self], None]] = []
         characters.add(self)
 
     def create_attacking_beam(self, height: float, length: float, fov: float) -> NodePath:
+        """
+        First NodePath is a geom node, second is a collision node.
+        """
         beam = models.load_model("characters/beam")
         tan = math.tan(math.radians(fov / 2))
         beam.set_scale((length * tan, length / math.sqrt(2), height))
@@ -57,8 +82,10 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         self.__beam = beam
         colliders = make_polyset_solids(cast(GeomNode, beam.get_child(0).node()))
         for s in colliders:
-            self.__beam_collider.add_solid(s)
-        self.__beam.attach_new_node(self.__beam_collider)  # .show()
+            s.set_tangible(False)
+            self.beam_collider.add_solid(s)
+        beam_coll_node = self.__beam.attach_new_node(self.beam_collider)
+        beam_coll_node.set_python_tag("character", self)
         return beam
 
     @property
@@ -120,10 +147,22 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         return task.cont
 
     @override
-    def destroy(self):
+    @inject_globals
+    def destroy(self, ctrav: CollisionTraverser):
         self.__command_task.remove()
         characters.remove(self)
+        ctrav.remove_collider(self.collider_np)
         return super().destroy()
+
+    def attack(self, other: "Character[Any]") -> None:
+        other.set_attacked()
+
+    def set_attacked(self):
+        # TODO: placeholder
+        Sequence(  # pyright: ignore[reportCallIssue]
+            LerpColorScaleInterval(self.node, 0.1, (0.55, 0, 0, 1)),
+            LerpColorScaleInterval(self.node, 0.4, (1, 1, 1, 1)),
+        ).start()
 
 
 class CharacterCommand(abc.ABC):
@@ -137,15 +176,81 @@ class CharacterCommand(abc.ABC):
         pass
 
 
+@final
+class CollisionExchanger(DirectObject):
+    """
+    When collision nodes for the characters and their beams are created, each collider contains the characters
+    that are *attacking* the given one. This is because the character beam uses polygon collisions and thus
+    can only be used as an INTO node, not as a FROM node.
+    This is, unfortunately, usually not intended as we need to know what the *given character* is attacking.
+
+    CollisionExchanger is the solution to this problem. It is a global object maintaining sets of characters
+    that are attacked by each character. Each character should register itself as well as its attacking beam
+    with the exchanger, and anyone can make a query of type "what is character X attacking".
+    """
+
+    notify = directNotify.newCategory("CollisionExchanger")
+
+    EXCHANGER_IN_EVENT = "exchanger-in"
+    EXCHANGER_OUT_EVENT = "exchanger-out"
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.attacking_map: dict[int, set[Character[Any]]] = defaultdict(set)
+        self.attacked_by_map: dict[int, set[Character[Any]]] = defaultdict(set)
+        self.accept(self.EXCHANGER_IN_EVENT, functools.partial(self.becomes_attack_target, True))
+        self.accept(self.EXCHANGER_OUT_EVENT, functools.partial(self.becomes_attack_target, False))
+
+    def manage(self, handler: CollisionHandlerEvent):
+        handler.add_in_pattern(self.EXCHANGER_IN_EVENT)
+        handler.add_out_pattern(self.EXCHANGER_OUT_EVENT)
+
+    def unmanage(self, character: Character[Any]):
+        for char in self.attacked_by_map[id(character)]:
+            self.attacking_map[id(char)].discard(character)
+        for char in self.attacking_map[id(character)]:
+            self.attacked_by_map[id(char)].discard(character)
+
+        del self.attacking_map[id(character)]
+        del self.attacked_by_map[id(character)]
+
+    def get_attacked_chars(self, char: Character[Any]):
+        return self.attacking_map.get(id(char), set())
+
+    def becomes_attack_target(self, is_in: bool, entry: CollisionEntry):
+        attacker = entry.get_into_node_path().get_python_tag("character")
+        defender = entry.get_from_node_path().get_python_tag("character")
+        if not isinstance(attacker, Character):
+            # The attacker can be a wall, the underlying system can't differentiate between the two
+            # self.notify.warning(f"Expected the attacker to be a character, but got {attacker}")
+            return
+        elif not isinstance(defender, Character):
+            self.notify.warning(f"Expected the defender to be a character, but got {defender}")
+        else:
+            attacker = cast(Character[Any], attacker)
+            defender = cast(Character[Any], defender)
+            if is_in:
+                self.attacking_map[id(attacker)].add(defender)
+                self.attacked_by_map[id(defender)].add(attacker)
+            else:
+                self.attacking_map[id(attacker)].discard(defender)
+                self.attacked_by_map[id(defender)].discard(attacker)
+
+
+@final
 class CharacterRepository:
     def __init__(self) -> None:
         self.__chars: set[Character[Any]] = set()
+        self.collisions = CollisionExchanger()
 
     def add(self, char: Character[Any]):
         self.__chars.add(char)
+        self.collisions.manage(char.get_collision_handler())
 
     def remove(self, char: Character[Any]):
         self.__chars.discard(char)
+        self.collisions.unmanage(char)
 
     def all(self):
         return list(self.__chars)
