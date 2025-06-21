@@ -2,9 +2,19 @@ import math
 from collections.abc import Callable, Collection
 from typing import Any, final, override
 
+from direct.interval.FunctionInterval import Func, Wait
+from direct.interval.Interval import Interval
+from direct.interval.LerpInterval import LerpColorInterval
+from direct.interval.MetaInterval import Sequence
 from panda3d.core import NodePath, Vec3
+from panda3d.direct import CInterval
 
-from cellcrawler.character.character import Character, CharacterCommand
+from cellcrawler.character.character import (
+    BEAM_ACTIVE_COLOR,
+    BEAM_INACTIVE_COLOR,
+    Character,
+    CharacterCommand,
+)
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, CharacterSpeed
 from cellcrawler.maze.blockpos_utils import maze_to_world_position
 
@@ -102,11 +112,33 @@ class ProceduralMovement(CharacterCommand):
 
 
 @final
-class Attack(CharacterCommand):
-    def __init__(self) -> None:
+class IntervalCommand(CharacterCommand):
+    def __init__(self, interval: Interval | CInterval) -> None:
         super().__init__()
-        self.passed_time = 0.0
+        # types-panda3d bug, too lazy to fix.
+        self.interval = Sequence(interval, Func(self.set_done))  # pyright: ignore[reportCallIssue]
+        self.started = False
 
     @override
     def run(self, character: Character[Any], dt: float) -> None:
-        pass
+        if not self.started:
+            self.interval.start()
+            self.started = True
+
+
+ATTACK_WINDUP_TIME = 0.06
+ATTACK_ACTIVE_TIME = 0.1
+ATTACK_SLOWDOWN_TIME = 0.54
+
+
+def make_attack(char: Character[Any]) -> CharacterCommand | None:
+    if char.attacking_beam is None:
+        return None
+
+    return IntervalCommand(
+        Sequence(  # pyright: ignore[reportCallIssue]
+            LerpColorInterval(char.attacking_beam, ATTACK_WINDUP_TIME, BEAM_ACTIVE_COLOR),
+            Wait(ATTACK_ACTIVE_TIME),
+            LerpColorInterval(char.attacking_beam, ATTACK_SLOWDOWN_TIME, BEAM_INACTIVE_COLOR),
+        )
+    )

@@ -15,6 +15,7 @@ from cellcrawler.character.commands import (
     Right,
     RotationCommand,
     adjust_for_hpr,
+    make_attack,
 )
 from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
@@ -36,12 +37,15 @@ class Player(Character[PlayerNode]):
         # TODO: this model is temporary
         model = models.load_model("characters/player")
         model.set_scale(0.5)
-        model.set_color_scale((1, 1, 0, 1))
+        model.get_child(0).set_color_scale((1, 1, 0, 1))
         # NOTE: don't use CollisionSphere, it can pass through walls due to an apparent bug in panda3d
         self.collision_node.add_solid(CollisionCapsule((0, 0, 0), (0, 0, 0.01), 0.7))
         collider = model.attach_new_node(self.collision_node)
         self.pusher.add_collider(collider, model)
         ctrav.add_collider(collider, self.pusher)
+        beam = self.create_attacking_beam(1, 1.4, 24)
+        beam.set_pos((0, 0.35, 0))
+        beam.reparent_to(model)
         return model
 
     @override
@@ -69,6 +73,7 @@ class Player(Character[PlayerNode]):
         self.key_tracker.accept("d", functools.partial(self.add_command, move_builder, "d", Right))
         self.key_tracker.accept("q", functools.partial(self.add_command, rotate_builder, "q", 1))
         self.key_tracker.accept("e", functools.partial(self.add_command, rotate_builder, "e", -1))
+        self.key_tracker.accept("space", self.attack)
 
         self.key_tracker.accept("w-up", functools.partial(self.remove_command, move_builder, "w"))
         self.key_tracker.accept("a-up", functools.partial(self.remove_command, move_builder, "a"))
@@ -102,3 +107,7 @@ class Player(Character[PlayerNode]):
     def destroy(self):
         self.key_tracker.ignore_all()
         return super().destroy()
+
+    def attack(self):
+        if self.get_command(CommandType.ATTACK) is None:
+            self.set_command(CommandType.ATTACK, make_attack(self))
