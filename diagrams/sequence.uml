@@ -1,0 +1,108 @@
+@startuml CellCrawler_Sequence_Diagram
+
+title Прохождение уровня в Cell Crawler
+
+actor Player as player
+participant "LevelManager" as lm
+participant "LevelFactory" as lf
+participant "Maze" as maze
+participant "MobFactory" as mf
+participant "Inventory" as inv
+participant "CombatSystem" as combat
+participant "ChestsSystem" as chest
+
+== Инициализация уровня ==
+player -> lm: start_new_level()
+activate lm
+lm -> lf: make_level()
+activate lf
+lf -> maze: generate()
+activate maze
+maze --> lf: Maze instance
+deactivate maze
+lf --> lm: Level instance
+deactivate lf
+
+lm -> mf: spawn_mobs()
+activate mf
+mf --> lm: List[Mobs]
+deactivate mf
+
+lm -> chest: spawn_chests()
+activate chest
+chest --> lm: List[Chest]
+deactivate chest
+
+lm -> player: level_ready()
+deactivate lm
+
+== Игровой процесс ==
+loop Пока игрок жив
+    player -> maze: move(direction)
+    activate maze
+    maze --> player: new_position
+    deactivate maze
+    
+    player -> combat: check_enemies_nearby()
+    activate combat
+    combat -> mf: get_nearby_mobs()
+    mf --> combat: mobs_list
+    combat --> player: enemies_info
+    deactivate combat
+    
+    alt Есть враги рядом
+        player -> combat: attack()
+        activate combat
+        combat -> mf: apply_damage(mob, damage)
+        mf --> combat: mob_hp
+        alt mob_hp <= 0
+            combat -> mf: drop_loot(mob)
+            mf -> inv: add_item(loot)
+            combat -> player: mob_killed()
+        else
+            combat -> player: attack_complete()
+        end
+        deactivate combat
+        
+        mob -> combat: counter_attack()
+        activate combat
+        combat -> player: take_damage(damage)
+        deactivate combat
+    end
+    
+    alt Найден предмет
+        player -> inv: pick_up(item)
+        activate inv
+        inv --> player: item_added
+        deactivate inv
+    end
+    
+    alt Найден cундук
+        player -> chest: open()
+        activate chest
+        chest --> player: show_items()
+        player -> chest: take(item)
+        chest -> inv: add_item(item)
+        inv --> chest: success
+        chest --> player: collecting_complete
+        deactivate chest
+    end
+    
+    alt Найден портал
+        player -> lm: level_complete()
+        activate lm
+        lm -> player: prepare_next_level()
+        deactivate lm
+        break
+    end
+end
+
+== Смерть игрока ==
+alt HP <= 0
+    player -> lm: player_died()
+    activate lm
+    lm -> player: show_game_over()
+    deactivate lm
+end
+
+@enduml

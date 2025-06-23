@@ -1,0 +1,24 @@
+@startuml
+left to right direction
+
+' Акторы (только внешние!)
+actor User
+
+' Игровая система
+rectangle "Cell Crawler Game" {
+    usecase "Start Game" as UC1
+    usecase "Configure Controls" as UC2
+    usecase "Pause Game" as UC3
+    usecase "Save/Load Progress" as UC4
+    usecase "Exit Game" as UC5
+   
+}
+
+' Связи пользователя
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+
+@enduml
