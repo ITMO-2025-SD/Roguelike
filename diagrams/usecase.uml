@@ -1,10 +1,8 @@
 @startuml
 left to right direction
 
-' Акторы (только внешние!)
 actor User
 
-' Игровая система
 rectangle "Cell Crawler Game" {
     usecase "Start Game" as UC1
     usecase "Configure Controls" as UC2
@@ -14,7 +12,6 @@ rectangle "Cell Crawler Game" {
    
 }
 
-' Связи пользователя
 User --> UC1
 User --> UC2
 User --> UC3

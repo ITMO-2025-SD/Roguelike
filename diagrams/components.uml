@@ -1,0 +1,52 @@
+@startuml
+' title Компонентная диаграмма Cell Crawler
+
+skinparam defaultTextAlignment center
+skinparam componentStyle uml2
+
+component "Game Engine (Panda3D)" as engine #lightblue
+
+
+package "Roguelike" {
+
+component "Core Game (Adapter)" as core #lightgreen
+
+package "Game Logic" as logic {
+
+component "World Generation" as world {
+    component "LevelFactory" as lfactory #peachpuff
+    component "MazeGenerator" as maze #peachpuff
+    component "MobFactory" as mob #peachpuff
+}
+
+component "Game Systems" as systems {
+    component "CombatSystem" as combat #moccasin
+    component "InventorySystem" as inv #moccasin
+    component "ChestsSystem" as shop #moccasin
+    component "SaveSystem" as save #moccasin
+}
+
+component "UI System" as ui {
+    'component "HUD" as hud #lavender
+    component "Menus" as menus #lavender
+}
+
+component "Input System" as input {
+    component "KeyBindings" as keys #thistle
+    component "MouseControl" as mouse #thistle
+}
+
+}
+
+}
+
+engine --> core
+core --> logic
+
+world --> systems
+systems --> ui
+input --> systems
+
+database "DB" as db #pink
+save --> db
+@enduml
