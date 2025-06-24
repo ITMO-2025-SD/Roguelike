@@ -85,8 +85,8 @@ class RotationCommand(CharacterCommand):
 class ProceduralMovement(CharacterCommand):
     ROTATION_CUTOFF = 0.02
     MOVEMENT_CUTOFF = 0.02
-    MOVEMENT_SPEED = MovementCommand.SPEED // 3
-    ROTATION_SPEED = RotationCommand.ROTATION_SPEED
+    MOVEMENT_SPEED = MovementCommand.SPEED // 4
+    ROTATION_SPEED = RotationCommand.ROTATION_SPEED * 3 // 4
 
     def __init__(self, target_pos: tuple[int, int]) -> None:
         super().__init__()

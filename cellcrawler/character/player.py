@@ -57,7 +57,7 @@ class Player(Character[PlayerNode]):
         model.get_child(0).set_color_scale((1, 1, 0, 1))
         # NOTE: don't use CollisionSphere, it can pass through walls due to an apparent bug in panda3d
         self.collision_node.add_solid(CollisionCapsule((0, 0, 0), (0, 0, 0.01), 0.7))
-        beam = self.create_attacking_beam(1, 1.4, 24)
+        beam = self.create_attacking_beam(1, 2.25, 40)
         beam.set_pos((0, 0.35, 0))
         beam.reparent_to(model)
         return model

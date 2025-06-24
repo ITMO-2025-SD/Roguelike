@@ -37,7 +37,7 @@ class LevelManager:
     def make_spawn_constructor(self, num: int) -> SpawnConstructor:
         # TODO: the architecture behind SpawnConstructors is not designed,
         # I tried to design it but failed, so kinda just went with whatever.
-        return functools.partial(random_init_spawn_constructor, num * 2 + 1)
+        return functools.partial(random_init_spawn_constructor, num * 3 + 1)
 
     def next_floor(self):
         # self.level_factory = self.generate_floor(self.level_num)
