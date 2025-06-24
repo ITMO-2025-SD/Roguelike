@@ -4,9 +4,10 @@ import math
 from collections import defaultdict
 from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, Final, Generic, Self, TypeVar, cast, final, override
+from typing import Any, ClassVar, Final, Generic, Self, TypeVar, cast, final, override
 
 from direct.directnotify.DirectNotifyGlobal import directNotify
+from direct.interval.FunctionInterval import Func
 from direct.interval.LerpInterval import LerpColorScaleInterval
 from direct.interval.MetaInterval import Sequence
 from direct.showbase.DirectObject import DirectObject
@@ -23,7 +24,7 @@ from panda3d.core import (
     Vec4,
 )
 
-from cellcrawler.core.roguelike_calc_tree import CharacterNode, LevelTree
+from cellcrawler.core.roguelike_calc_tree import CharacterNode, Damage, DamageContext, LevelTree, MaxHealth
 from cellcrawler.lib.base import DependencyInjector, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode, ManagedNodePath
 from cellcrawler.lib.model_repository import models
@@ -48,6 +49,9 @@ class CommandType(Enum):
 
 
 class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
+    DEFAULT_MAX_HEALTH: ClassVar[int] = 100
+    DEFAULT_DAMAGE: ClassVar[int] = 20
+
     @abc.abstractmethod
     def get_collision_handler(self) -> CollisionHandlerEvent:
         pass
@@ -60,6 +64,8 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         self.collider_np: Final = self.node.attach_new_node(self.collision_node)
 
         self.calc_node: Final = self.__make_calc_node()
+        self.health: int = self.calc_node.calculate(MaxHealth, self.DEFAULT_MAX_HEALTH, self.calc_node)
+        self.max_health: int = self.health
         self.__commands: dict[CommandType, CharacterCommand] = {}
         task_manager = DependencyInjector.get(TaskManager)
         self.__command_task = task_manager.add(self.__exec_command, f"exec-character-commands-{id(self)}")
@@ -155,14 +161,22 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         return super().destroy()
 
     def attack(self, other: "Character[Any]") -> None:
-        other.set_attacked()
+        damage = self.calc_node.calculate(Damage, self.DEFAULT_DAMAGE, DamageContext(self.calc_node, other.calc_node))
+        other.set_attacked(damage)
 
-    def set_attacked(self):
-        # TODO: placeholder
+    def set_attacked(self, damage: int):
+        if self.health <= 0:
+            # Already dead, the animation didn't finish yet probably.
+            return
+        self.health -= damage
         Sequence(  # pyright: ignore[reportCallIssue]
             LerpColorScaleInterval(self.node, 0.1, (0.55, 0, 0, 1)),
-            LerpColorScaleInterval(self.node, 0.4, (1, 1, 1, 1)),
+            Func(self.kill) if self.health <= 0 else LerpColorScaleInterval(self.node, 0.4, (1, 1, 1, 1)),
         ).start()
+
+    @abc.abstractmethod
+    def kill(self):
+        pass
 
 
 class CharacterCommand(abc.ABC):

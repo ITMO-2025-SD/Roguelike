@@ -21,6 +21,10 @@ class ManagedNode(abc.ABC):
     def run_before_destruction(self, callback: Callable[[Self], None]):
         self.__destruction_callbacks.append(callback)
 
+    @property
+    def removed(self):
+        return self.__removed
+
     def destroy(self):
         if self.__removed:
             raise RuntimeError(f"Node {self} removed twice")
@@ -28,8 +32,9 @@ class ManagedNode(abc.ABC):
             c(self)
         self.__destruction_callbacks = []
         self.__removed = True
-        for c in self.children:
-            c.destroy()
+        for c in list(self.children):
+            if not c.removed:
+                c.destroy()
         self.children = set()
         self._cleanup()
         if self.parent:

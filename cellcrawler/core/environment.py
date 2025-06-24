@@ -1,11 +1,12 @@
 import random
+from collections.abc import Callable
 from typing import final, override
 
 from panda3d.core import NodePath
 
 from cellcrawler.character.mob import Mob
 from cellcrawler.character.player import Player
-from cellcrawler.core.roguelike_calc_tree import LevelTree
+from cellcrawler.core.roguelike_calc_tree import LevelTree, MobDied
 from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNodePath
 from cellcrawler.maze.block_factory import BlockFactory
@@ -22,6 +23,17 @@ class Environment(ManagedNodePath):
         ]
         super().__init__(None)
         self.calc_node = LevelTree()
+        self.mob_count = 0
+        self.calc_node.accept(MobDied, self.mob_died)
+        self._on_floor_end_callback: Callable[[], None] | None = None
+
+    def mob_died(self):
+        self.mob_count -= 1
+        if not self.mob_count and self._on_floor_end_callback:
+            self._on_floor_end_callback()
+
+    def run_on_floor_end(self, callback: Callable[[], None]):
+        self._on_floor_end_callback = callback
 
     @override
     @inject_globals
@@ -50,3 +62,4 @@ class Environment(ManagedNodePath):
 
     def spawn_mob(self, mob: Mob):
         mob.node.reparent_to(self.node)
+        self.mob_count += 1

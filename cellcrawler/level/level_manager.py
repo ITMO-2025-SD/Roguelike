@@ -50,6 +50,7 @@ class LevelManager:
         if self.environ:
             self.environ.destroy()  # destroys mob manager too
         self.environ = self.level_factory.make_env()
+        self.environ.run_on_floor_end(self.next_floor)
         self.mob_manager = MobManager(self.environ)
         DependencyInjector.set_level_tree(self.environ.calc_node)
         self.player = self.environ.spawn_player()

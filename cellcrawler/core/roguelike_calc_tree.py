@@ -3,7 +3,7 @@ from typing import Any, Generic, final
 
 from typing_extensions import TypeVar
 
-from cellcrawler.lib.calculation_tree import MathTarget, Node, RootNode
+from cellcrawler.lib.calculation_tree import MathTarget, Node, RootNode, Trigger
 from cellcrawler.maze.pathfinding.pathfinding import PathfindingService
 
 GN_co = TypeVar("GN_co", bound="GameNode[Any]", default="GameNode[Any]", covariant=True)
@@ -35,5 +35,14 @@ class NextCellContext:
     start_pos: tuple[int, int]
 
 
+@dataclass
+class DamageContext:
+    attacker: CharacterNode
+    target: CharacterNode
+
+
 CharacterSpeed = MathTarget[float, CharacterNode]("CharacterSpeed")
 MobNextCell = MathTarget[tuple[int, int] | None, NextCellContext]("MobNextCell")
+MaxHealth = MathTarget[int, CharacterNode]("MaxHealth")
+Damage = MathTarget[int, DamageContext]("Damage")
+MobDied = Trigger[()]("MobDied")

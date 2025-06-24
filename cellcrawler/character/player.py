@@ -44,6 +44,8 @@ from cellcrawler.maze.pathfinding.character_pathfinding import CharacterPathfind
 
 @final
 class Player(Character[PlayerNode]):
+    DEFAULT_DAMAGE = 50
+
     @override
     def get_collision_handler(self) -> CollisionHandlerEvent:
         return self.pusher
@@ -131,3 +133,8 @@ class Player(Character[PlayerNode]):
     def exec_attack(self):
         if self.get_command(CommandType.ATTACK) is None:
             self.set_command(CommandType.ATTACK, make_attack(self))
+
+    @override
+    def kill(self):
+        # TODO: temporary
+        self.destroy()
