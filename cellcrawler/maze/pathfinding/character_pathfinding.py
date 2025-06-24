@@ -19,14 +19,18 @@ class CharacterPathfinding(PathfindingService):
     def __init__(self, player: Character[Any]):
         self.distances: list[list[int | None]] = []
         self.__handlers: dict[ManagedNode, Callable[[Self], None]] = {}
-        self.__player: Character[Any] | None = player
+        self.__player = player
+        self.__active: bool = False
 
     def start(self):
-        if self.__player is None:
+        if self.__active:
             raise ValueError("Attempt to start CharacterPathfinding twice")
         self.__player.run_on_cell_change(self.update_distances)
         self.distances = self.__get_distances(self.__player)
-        self.__player = None
+        self.__active = True
+
+    def stop(self):
+        self.__active = False
 
     @override
     def register(self, node: ManagedNode, callback: Callable[[Self], None]):

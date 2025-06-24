@@ -72,7 +72,7 @@ class Player(Character[PlayerNode]):
     def create_calc_node(self, parent: LevelTree) -> PlayerNode:
         return PlayerNode(parent, self.pathfinder)
 
-    def __init__(self, parent: ManagedNode | None) -> None:
+    def __init__(self, parent: ManagedNode) -> None:
         self.pusher = CollisionHandlerPusher()
         self.pusher.set_horizontal(True)
         self.pathfinder = CharacterPathfinding(self)
@@ -83,7 +83,6 @@ class Player(Character[PlayerNode]):
         self.beam_collider.set_into_collide_mask(PLAYER_BEAM_COLLIDE_MASK)
         # QueueDebugger(self, "player", self.attacked_mobs_queue)
         # self.collision_node_pusher.set_into_collide_mask(0)
-        self.pathfinder.start()
         self.key_tracker = DirectObject()
         self.move_commands: dict[str, Vec3] = {}
 
