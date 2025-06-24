@@ -4,7 +4,7 @@ from typing import final, override
 
 from direct.task.Task import Task, TaskManager
 
-from cellcrawler.character.character_command import CommandType
+from cellcrawler.character.character import CommandType
 from cellcrawler.character.mob import Mob
 from cellcrawler.character.mob_factory import MobFactory
 from cellcrawler.core.environment import Environment
@@ -45,7 +45,7 @@ class MobManager(ManagedNode):
     def set_command_for(self, mob: Mob):
         if not mob.strategy:
             return False
-        command = mob.strategy.make_command(mob.get_cell_pos())
+        command = mob.strategy.make_command(mob)
         mob.set_command(CommandType.MOB_MOVEMENT, command)
         return command is not None
 

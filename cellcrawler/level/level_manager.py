@@ -1,10 +1,11 @@
 import functools
 from collections.abc import Callable, Sequence
-from typing import final
+from typing import Final, final, override
 
 from cellcrawler.character.mob_factory import MobFactory
 from cellcrawler.character.player import Player
 from cellcrawler.core.environment import Environment
+from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerDied
 from cellcrawler.gui.keybind_panel import KeybindPanel
 from cellcrawler.level.mob_manager import MobManager, SpawnBlackboard
 from cellcrawler.level.random_init_spawn_constructor import random_init_spawn_constructor
@@ -18,18 +19,26 @@ type SpawnConstructor = Callable[[SpawnBlackboard], ManagedNode | None]
 
 
 @final
-class LevelManager:
+class LevelManager(ManagedNode):
     PredeterminedLevels: Sequence[LevelFactory] = [ConstLevelFactory("maps/tutorial.ccw")]
     PredeterminedSpawns: Sequence[SpawnConstructor] = []
 
+    @override
+    def _cleanup(self) -> None:
+        pass
+
     def __init__(self, mob_factory: MobFactory) -> None:
+        super().__init__(None)
         self.level_num = 0
         self.keybind_panel = KeybindPanel(None)
         self.environ: Environment | None = None
         self.level_factory: LevelFactory | None = None
         self.mob_manager: MobManager | None = None
-        self.player: Player | None = None
         self.mob_factory = mob_factory
+        self.level_tree = LevelTree()
+        DependencyInjector.set_level_tree(self.level_tree)
+        self.player: Final = Player(self)
+        self.level_tree.accept(PlayerDied, self.destroy)
 
     def generate_floor(self, num: int) -> LevelFactory:
         return RandomRoomsLevelFactory(num + 10, 2, 3 + num // 4, num * (num + 1) + 4)
@@ -37,7 +46,7 @@ class LevelManager:
     def make_spawn_constructor(self, num: int) -> SpawnConstructor:
         # TODO: the architecture behind SpawnConstructors is not designed,
         # I tried to design it but failed, so kinda just went with whatever.
-        return functools.partial(random_init_spawn_constructor, num * 2 + 1)
+        return functools.partial(random_init_spawn_constructor, num * 3 + 1)
 
     def next_floor(self):
         # self.level_factory = self.generate_floor(self.level_num)
@@ -48,11 +57,13 @@ class LevelManager:
         else:
             self.level_factory = self.generate_floor(self.level_num)
         if self.environ:
+            self.player.pathfinder.stop()
             self.environ.destroy()  # destroys mob manager too
-        self.environ = self.level_factory.make_env()
+        self.environ = self.level_factory.make_env(self, self.level_tree)
+        self.environ.run_on_floor_end(self.next_floor)
         self.mob_manager = MobManager(self.environ)
-        DependencyInjector.set_level_tree(self.environ.calc_node)
-        self.player = self.environ.spawn_player()
+        self.environ.spawn_player(self.player)
+        self.player.pathfinder.start()
 
         if self.level_num < len(self.PredeterminedSpawns):
             spawner_constructor = self.PredeterminedSpawns[self.level_num]

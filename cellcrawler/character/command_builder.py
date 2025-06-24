@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import TypeVar, final
 
-from cellcrawler.character.character_command import CharacterCommand, CommandType
+from cellcrawler.character.character import CharacterCommand, CommandType
 
 U = TypeVar("U")
 
