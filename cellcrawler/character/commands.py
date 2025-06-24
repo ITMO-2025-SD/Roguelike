@@ -132,7 +132,7 @@ ATTACK_ACTIVE_TIME = 0.1
 ATTACK_SLOWDOWN_TIME = 0.54
 
 
-def make_attack(attacker: Character[Any]) -> CharacterCommand | None:
+def make_attack(attacker: Character[Any]) -> IntervalCommand | None:
     if attacker.attacking_beam is None:
         return None
 
@@ -148,3 +148,24 @@ def make_attack(attacker: Character[Any]) -> CharacterCommand | None:
             LerpColorInterval(attacker.attacking_beam, ATTACK_SLOWDOWN_TIME, BEAM_INACTIVE_COLOR),
         )
     )
+
+
+@final
+class WrapInAttack(CharacterCommand):
+    def __init__(self, character: Character[Any], other: CharacterCommand) -> None:
+        super().__init__()
+        self.attack = make_attack(character)
+        self.other = other
+
+    @override
+    def run(self, character: Character[Any], dt: float):
+        if (
+            self.attack
+            and (self.attack.started or characters.collisions.get_attacked_chars(character))
+            and not self.attack.done
+        ):
+            self.attack.run(character, dt)
+        if self.other.done and (not self.attack or self.attack.done or not self.attack.started):
+            self.set_done()
+        else:
+            self.other.run(character, dt)

@@ -1,6 +1,9 @@
 import functools
 from typing import final, override
 
+from direct.interval.FunctionInterval import Func
+from direct.interval.LerpInterval import LerpScaleInterval
+from direct.interval.MetaInterval import Sequence
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import (
     CollisionCapsule,
@@ -30,7 +33,7 @@ from cellcrawler.character.commands import (
     adjust_for_hpr,
     make_attack,
 )
-from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerNode
+from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerDied, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
 from cellcrawler.inventory.items.fear_amulet import FearAmulet
@@ -136,5 +139,9 @@ class Player(Character[PlayerNode]):
 
     @override
     def kill(self):
-        # TODO: temporary
-        self.destroy()
+        Sequence(  # pyright: ignore[reportCallIssue]
+            LerpScaleInterval(self.node, 0.35, 0.001),
+            Func(self.destroy),
+            Func(self.calc_node.dispatch, PlayerDied),
+            Func(self.calc_node.destroy),
+        ).start()

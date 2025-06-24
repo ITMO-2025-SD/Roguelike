@@ -6,7 +6,7 @@ from panda3d.core import NodePath
 
 from cellcrawler.character.mob import Mob
 from cellcrawler.character.player import Player
-from cellcrawler.core.roguelike_calc_tree import LevelTree, MobDied
+from cellcrawler.core.roguelike_calc_tree import LevelTree, MobDied, PlayerDied
 from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNodePath
 from cellcrawler.maze.block_factory import BlockFactory
@@ -25,12 +25,16 @@ class Environment(ManagedNodePath):
         self.calc_node = LevelTree()
         self.mob_count = 0
         self.calc_node.accept(MobDied, self.mob_died)
+        self.calc_node.accept(PlayerDied, self.player_died)
         self._on_floor_end_callback: Callable[[], None] | None = None
 
     def mob_died(self):
         self.mob_count -= 1
         if not self.mob_count and self._on_floor_end_callback:
             self._on_floor_end_callback()
+
+    def player_died(self):
+        raise RuntimeError("death screen not yet implemented")
 
     def run_on_floor_end(self, callback: Callable[[], None]):
         self._on_floor_end_callback = callback

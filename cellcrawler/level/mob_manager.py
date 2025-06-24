@@ -45,7 +45,7 @@ class MobManager(ManagedNode):
     def set_command_for(self, mob: Mob):
         if not mob.strategy:
             return False
-        command = mob.strategy.make_command(mob.get_cell_pos())
+        command = mob.strategy.make_command(mob)
         mob.set_command(CommandType.MOB_MOVEMENT, command)
         return command is not None
 
