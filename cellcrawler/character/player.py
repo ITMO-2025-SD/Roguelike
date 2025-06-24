@@ -21,6 +21,7 @@ from cellcrawler.character.character import (
     Character,
     CommandType,
 )
+from cellcrawler.character.character_hp_bar import CharacterHPBar
 from cellcrawler.character.command_builder import CommandBuilder
 from cellcrawler.character.commands import (
     Back,
@@ -38,7 +39,7 @@ from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
 from cellcrawler.inventory.items.fear_amulet import FearAmulet
 from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
-from cellcrawler.lib.base import RootNodes, inject_globals
+from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
 from cellcrawler.lib.model_repository import models
 from cellcrawler.lib.p3d_utils import toggle_vis
@@ -112,6 +113,12 @@ class Player(Character[PlayerNode]):
         self.inventory_gui.frame.hide()
         # TODO: might need a GUI manager
         self.key_tracker.accept("i", functools.partial(toggle_vis, self.inventory_gui.frame))
+        hp_bar = CharacterHPBar(self, self.health, self.max_health)
+
+        root_nodes = DependencyInjector.get(RootNodes)
+        hp_bar.node.reparent_to(root_nodes.bottom_left)
+        hp_bar.node.set_pos(0.05, 0, 0.1)
+        hp_bar.node.set_scale(0.5)
 
     @inject_globals
     def configure_camera(self, nodes: RootNodes):

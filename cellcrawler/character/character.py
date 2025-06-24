@@ -12,6 +12,7 @@ from direct.interval.LerpInterval import LerpColorScaleInterval
 from direct.interval.MetaInterval import Sequence
 from direct.showbase.DirectObject import DirectObject
 from direct.task.Task import Task, TaskManager
+from observables.observable_object import Value
 from panda3d.core import (
     BitMask32,
     ClockObject,
@@ -64,8 +65,8 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         self.collider_np: Final = self.node.attach_new_node(self.collision_node)
 
         self.calc_node: Final = self.__make_calc_node()
-        self.health: int = self.calc_node.calculate(MaxHealth, self.DEFAULT_MAX_HEALTH, self.calc_node)
-        self.max_health: int = self.health
+        self.health: Final = Value(self.calc_node.calculate(MaxHealth, self.DEFAULT_MAX_HEALTH, self.calc_node))
+        self.max_health: Final = Value(self.health.value)
         self.__commands: dict[CommandType, CharacterCommand] = {}
         task_manager = DependencyInjector.get(TaskManager)
         self.__command_task = task_manager.add(self.__exec_command, f"exec-character-commands-{id(self)}")
@@ -165,13 +166,13 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         other.set_attacked(damage)
 
     def set_attacked(self, damage: int):
-        if self.health <= 0:
+        if self.health.value <= 0:
             # Already dead, the animation didn't finish yet probably.
             return
-        self.health -= damage
+        self.health.value -= damage
         Sequence(  # pyright: ignore[reportCallIssue]
             LerpColorScaleInterval(self.node, 0.1, (0.55, 0, 0, 1)),
-            Func(self.kill) if self.health <= 0 else LerpColorScaleInterval(self.node, 0.4, (1, 1, 1, 1)),
+            Func(self.kill) if self.health.value <= 0 else LerpColorScaleInterval(self.node, 0.4, (1, 1, 1, 1)),
         ).start()
 
     @abc.abstractmethod
