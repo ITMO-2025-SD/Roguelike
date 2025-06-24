@@ -92,7 +92,7 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
             s.set_tangible(False)
             self.beam_collider.add_solid(s)
         beam_coll_node = self.__beam.attach_new_node(self.beam_collider)
-        beam_coll_node.set_python_tag("character", self)
+        beam_coll_node.set_python_tag("beam_character", self)
         return beam
 
     @property
@@ -234,7 +234,7 @@ class CollisionExchanger(DirectObject):
         return self.attacking_map.get(id(char), set())
 
     def becomes_attack_target(self, is_in: bool, entry: CollisionEntry):
-        attacker = entry.get_into_node_path().get_python_tag("character")
+        attacker = entry.get_into_node_path().get_python_tag("beam_character")
         defender = entry.get_from_node_path().get_python_tag("character")
         if not isinstance(attacker, Character):
             # The attacker can be a wall, the underlying system can't differentiate between the two

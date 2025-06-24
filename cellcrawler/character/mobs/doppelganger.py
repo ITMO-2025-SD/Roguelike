@@ -18,6 +18,7 @@ class Doppelganger(Mob):
         self.collision_node.add_solid(solid)
         collider = model.attach_new_node(self.collision_node)
         collider.set_python_tag("character", self)
-        beam = self.create_attacking_beam(1, 3, 30)
+        beam = self.create_attacking_beam(1, 2.25, 30)
         beam.reparent_to(model)
+        beam.set_pos((0, 0.4, 0))
         return model
