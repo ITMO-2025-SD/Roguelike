@@ -40,7 +40,10 @@ from cellcrawler.character.commands import (
 from cellcrawler.core.roguelike_calc_tree import LevelTree, MobDied, PlayerDied, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
+from cellcrawler.inventory.items.fear_amulet import FearAmulet
 from cellcrawler.inventory.items.poisonous_helmet import PoisonousHelmet
+from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
+from cellcrawler.inventory.items.stunning_armor import StunningArmor
 from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
 from cellcrawler.lib.model_repository import models
@@ -157,7 +160,7 @@ class Player(Character[PlayerNode]):
             self.gain_random_item()
 
     def gain_random_item(self):
-        ctors = [PoisonousHelmet]  # [FearAmulet, SpeedAmulet, StunningArmor]
+        ctors = [PoisonousHelmet, FearAmulet, SpeedAmulet, StunningArmor]
         self.inventory.add(random.choice(ctors)())
 
     @inject_globals
