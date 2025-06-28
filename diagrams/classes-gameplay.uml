@@ -3,13 +3,17 @@
 title Cell Crawler - Gameplay
 
 class Character {
-  +(x,y) next_cell(x, y)
+  +Observable[int] health
+  +Observable[int] max_health
   -dict[str, Command] commands
   #set_command(str, Command | None)
+  +attack(Character)
+  +bool attacked(int damage)
+  #abstract kill()
 }
 
 class Command {
-  +run(Node, CalcNode)
+  +run(Character)
 }
 
 class CommandBuilder {
@@ -43,14 +47,17 @@ abstract class MovementStrategy {
 Command <|-- MovementCommand
 Command <|-- RotationCommand
 
-class Player {
-  -set[Keybind] active
+class Player
+
+class Pathfinder {
+  +int distance(x, y)
 }
 
 Character <|-- Mob
 Mob *-- MovementStrategy
 Character <|-- Player
-Player o-- Inventory: owned by LevelManager
+Player *-- Inventory
+Player *-- Pathfinder: runs every second
 Inventory *-- InventoryItem: many
 MovementStrategy <|-- TargetStrategy
 MovementStrategy <|-- StandStillStrategy
