@@ -105,9 +105,9 @@ class ProceduralMovement(CharacterCommand):
         target_vec.normalize()
         rot_angle = target_vec.angle_rad(forward_vec.normalized())
         if rot_angle > self.ROTATION_CUTOFF:
-            character.node.set_h(character.node.get_h() + dt * self.ROTATION_SPEED)
-        elif rot_angle < -self.ROTATION_CUTOFF:
             character.node.set_h(character.node.get_h() - dt * self.ROTATION_SPEED)
+        elif rot_angle < -self.ROTATION_CUTOFF:
+            character.node.set_h(character.node.get_h() + dt * self.ROTATION_SPEED)
         else:
             character.node.set_pos(pos + target_vec * self.MOVEMENT_SPEED * dt)
 

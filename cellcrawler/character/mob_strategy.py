@@ -11,6 +11,14 @@ from cellcrawler.maze.maze_data import MazeData
 type CellPos = tuple[int, int]
 
 
+def add_pos(first: CellPos, second: CellPos) -> CellPos:
+    return first[0] + second[0], first[1] + second[1]
+
+
+def sub_pos(first: CellPos, second: CellPos) -> CellPos:
+    return first[0] - second[0], first[1] - second[1]
+
+
 class MobStrategy(abc.ABC):
     @abc.abstractmethod
     def make_command(self, mob: Character[Any]) -> CharacterCommand | None: ...
@@ -65,13 +73,22 @@ class StandStillStrategy(MobMovementStrategy):
 @final
 class AfterBarStrategy(MobMovementStrategy):
     AFK_CHANCE = 0  # 0.15
+    current_move: None | tuple[int, int] = None
 
     @override
     def next_cell(self, current_cell: CellPos, maze: MazeData) -> CellPos | None:
         x, y = current_cell
         options = maze.get_adjacent(x, y)
+        if self.current_move and (same_direction := add_pos(current_cell, self.current_move)) in options:
+            return same_direction
         if options and random.random() < 1 - self.AFK_CHANCE:
-            return random.choice(options)
+            if len(options) > 1 and self.current_move:
+                # Attempt not to go back and forth repeatedly
+                options = [x for x in options if x != sub_pos((0, 0), self.current_move)]
+            move = random.choice(options)
+            self.current_move = sub_pos(move, current_cell)
+            return move
+        self.current_move = None
         return None
 
 
