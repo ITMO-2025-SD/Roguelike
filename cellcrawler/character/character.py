@@ -25,7 +25,7 @@ from panda3d.core import (
     Vec4,
 )
 
-from cellcrawler.core.roguelike_calc_tree import CharacterNode, Damage, DamageContext, LevelTree, MaxHealth
+from cellcrawler.core.roguelike_calc_tree import CharacterNode, Damage, DamageContext, DamageDealt, LevelTree, MaxHealth
 from cellcrawler.lib.base import DependencyInjector, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode, ManagedNodePath
 from cellcrawler.lib.model_repository import models
@@ -162,18 +162,21 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         return super().destroy()
 
     def attack(self, other: "Character[Any]") -> None:
-        damage = self.calc_node.calculate(Damage, self.DEFAULT_DAMAGE, DamageContext(self.calc_node, other.calc_node))
-        other.set_attacked(damage)
+        ctx = DamageContext(self.calc_node, other.calc_node, self.DEFAULT_DAMAGE)
+        damage = ctx.damage = self.calc_node.calculate(Damage, self.DEFAULT_DAMAGE, ctx)
+        if damage > 0 and other.set_attacked(damage):
+            self.calc_node.dispatch(DamageDealt, ctx)
 
     def set_attacked(self, damage: int):
         if self.health.value <= 0:
             # Already dead, the animation didn't finish yet probably.
-            return
+            return False
         self.health.value -= damage
         Sequence(  # pyright: ignore[reportCallIssue]
             LerpColorScaleInterval(self.node, 0.1, (0.55, 0, 0, 1)),
             Func(self.kill) if self.health.value <= 0 else LerpColorScaleInterval(self.node, 0.4, (1, 1, 1, 1)),
         ).start()
+        return True
 
     @abc.abstractmethod
     def kill(self):

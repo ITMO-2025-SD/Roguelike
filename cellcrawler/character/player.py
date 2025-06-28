@@ -77,6 +77,7 @@ class Player(Character[PlayerNode]):
         self.pusher = CollisionHandlerPusher()
         self.pusher.set_horizontal(True)
         self.pathfinder = CharacterPathfinding(self)
+        DependencyInjector.set_pathfinder(self.pathfinder)
         super().__init__(parent)
         self.pathfinder_service = RepeatedPathfinder(self, self.pathfinder, 1)
         self.pusher.add_collider(self.collider_np, self.node)

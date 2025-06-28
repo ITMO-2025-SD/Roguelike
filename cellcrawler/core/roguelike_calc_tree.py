@@ -39,11 +39,13 @@ class NextCellContext:
 class DamageContext:
     attacker: CharacterNode
     target: CharacterNode
+    damage: int
 
 
 CharacterSpeed = MathTarget[float, CharacterNode]("CharacterSpeed")
 MobNextCell = MathTarget[tuple[int, int] | None, NextCellContext]("MobNextCell")
 MaxHealth = MathTarget[int, CharacterNode]("MaxHealth")
 Damage = MathTarget[int, DamageContext]("Damage")
+DamageDealt = Trigger[DamageContext]("DamageDealt")
 MobDied = Trigger[()]("MobDied")
 PlayerDied = Trigger[()]("PlayerDied")

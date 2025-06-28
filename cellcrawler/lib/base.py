@@ -13,6 +13,7 @@ from rich.traceback import install
 from cellcrawler.core.roguelike_calc_tree import LevelTree
 from cellcrawler.maze.block_factory import BlockFactory
 from cellcrawler.maze.maze_data import MazeData
+from cellcrawler.maze.pathfinding.pathfinding import PathfindingService
 
 
 @final
@@ -79,6 +80,7 @@ class DependencyInjector:
         ShowBase,
         LevelTree,
         ClockObject,
+        PathfindingService,
     }
 
     def __init__(self) -> Never:
@@ -105,6 +107,10 @@ class DependencyInjector:
     @classmethod
     def set_maze(cls, maze: MazeData):
         cls.bound_types[MazeData] = maze
+
+    @classmethod
+    def set_pathfinder(cls, pf: PathfindingService):
+        cls.bound_types[PathfindingService] = pf
 
     @classmethod
     def set_block_factory(cls, factory: BlockFactory):
