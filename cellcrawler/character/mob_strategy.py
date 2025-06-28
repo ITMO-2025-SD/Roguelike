@@ -60,7 +60,7 @@ class CalcTreeMovementOverride(MobMovementStrategy):
     @override
     def next_cell(self, current_cell: CellPos, maze: MazeData) -> CellPos | None:
         cell = self.base_strategy.next_cell(current_cell, maze)
-        return self.calc_node.calculate(MobNextCell, cell, NextCellContext(current_cell))
+        return self.calc_node.calculate(MobNextCell, cell, NextCellContext(self.calc_node, current_cell))
 
 
 @final
@@ -72,6 +72,28 @@ class StandStillStrategy(MobMovementStrategy):
 
 @final
 class AfterBarStrategy(MobMovementStrategy):
+    AFK_CHANCE = 0  # 0.15
+    current_move: None | tuple[int, int] = None
+
+    @override
+    def next_cell(self, current_cell: CellPos, maze: MazeData) -> CellPos | None:
+        x, y = current_cell
+        options = maze.get_adjacent(x, y)
+        if self.current_move and (same_direction := add_pos(current_cell, self.current_move)) in options:
+            return same_direction
+        if options and random.random() < 1 - self.AFK_CHANCE:
+            if len(options) > 1 and self.current_move:
+                # Attempt not to go back and forth repeatedly
+                options = [x for x in options if x != sub_pos((0, 0), self.current_move)]
+            move = random.choice(options)
+            self.current_move = sub_pos(move, current_cell)
+            return move
+        self.current_move = None
+        return None
+
+
+@final
+class FearStrategy(MobMovementStrategy):
     AFK_CHANCE = 0  # 0.15
     current_move: None | tuple[int, int] = None
 

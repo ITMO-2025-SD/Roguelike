@@ -1,10 +1,13 @@
 import functools
-from typing import final, override
+import random
+from typing import Final, final, override
 
+from direct.gui.DirectLabel import DirectLabel
 from direct.interval.FunctionInterval import Func
 from direct.interval.LerpInterval import LerpScaleInterval
 from direct.interval.MetaInterval import Sequence
 from direct.showbase.DirectObject import DirectObject
+from observables.observable_object import ComputedProperty, Value
 from panda3d.core import (
     CollisionCapsule,
     CollisionHandlerEvent,
@@ -34,14 +37,14 @@ from cellcrawler.character.commands import (
     adjust_for_hpr,
     make_attack,
 )
-from cellcrawler.core.roguelike_calc_tree import LevelTree, PlayerDied, PlayerNode
+from cellcrawler.core.roguelike_calc_tree import LevelTree, MobDied, PlayerDied, PlayerNode
 from cellcrawler.inventory.datastore import Inventory
 from cellcrawler.inventory.gui import InventoryGUI
-from cellcrawler.inventory.items.fear_amulet import FearAmulet
-from cellcrawler.inventory.items.speed_amulet import SpeedAmulet
+from cellcrawler.inventory.items.poisonous_helmet import PoisonousHelmet
 from cellcrawler.lib.base import DependencyInjector, RootNodes, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
 from cellcrawler.lib.model_repository import models
+from cellcrawler.lib.observable_utils import DirectGuiWrapper
 from cellcrawler.lib.p3d_utils import toggle_vis
 from cellcrawler.maze.pathfinding.character_pathfinding import CharacterPathfinding
 from cellcrawler.maze.pathfinding.repeated_pathfinder import RepeatedPathfinder
@@ -50,6 +53,7 @@ from cellcrawler.maze.pathfinding.repeated_pathfinder import RepeatedPathfinder
 @final
 class Player(Character[PlayerNode]):
     DEFAULT_DAMAGE = 50
+    BONUS_HP_PER_LEVEL = 25
 
     @override
     def get_collision_handler(self) -> CollisionHandlerEvent:
@@ -110,17 +114,51 @@ class Player(Character[PlayerNode]):
         self.key_tracker.accept("q-up", functools.partial(self.remove_command, rotate_builder, "q"))
         self.key_tracker.accept("e-up", functools.partial(self.remove_command, rotate_builder, "e"))
 
-        self.inventory = Inventory(self.calc_node, [SpeedAmulet(), FearAmulet()])
+        self.inventory = Inventory(self.calc_node, [])
         self.inventory_gui = InventoryGUI(self, self.inventory)
         self.inventory_gui.frame.hide()
         # TODO: might need a GUI manager
         self.key_tracker.accept("i", functools.partial(toggle_vis, self.inventory_gui.frame))
         hp_bar = CharacterHPBar(self, self.health, self.max_health)
 
+        self.experience: Final = Value(0)
+        self.level: Final = Value(1)
+        self.exp_to_next: Final = ComputedProperty(lambda: self.level.value * (self.level.value + 1) // 2)
+        level_bar = CharacterHPBar(self, self.experience, self.exp_to_next, "EXP")
+        self.experience.observe(self.update_level)
+        self.level.observe(self.level_changed)
+        self.calc_node.accept(MobDied, lambda: self.experience.set(self.experience.value + 1))
+
         root_nodes = DependencyInjector.get(RootNodes)
         hp_bar.node.reparent_to(root_nodes.bottom_left)
         hp_bar.node.set_pos(0.05, 0, 0.1)
         hp_bar.node.set_scale(0.5)
+        level_bar.node.reparent_to(root_nodes.bottom_left)
+        level_bar.node.set_pos(0.05, 0, 0.28)
+        level_bar.node.set_scale(0.5)
+
+        self.level_text = DirectGuiWrapper(
+            DirectLabel,
+            text=ComputedProperty(lambda: f"Level {self.level.value}"),
+            scale=0.1,
+            pos=(0.3, 0, 0.41),
+            parent=root_nodes.bottom_left,
+            relief=None,
+        )
+
+    def level_changed(self, _value: int):
+        self.max_health.value += self.BONUS_HP_PER_LEVEL
+        self.health.value = self.max_health.value
+
+    def update_level(self, exp: int):
+        if exp >= self.exp_to_next.value:
+            self.level.value += 1
+            self.experience.value -= exp
+            self.gain_random_item()
+
+    def gain_random_item(self):
+        ctors = [PoisonousHelmet]  # [FearAmulet, SpeedAmulet, StunningArmor]
+        self.inventory.add(random.choice(ctors)())
 
     @inject_globals
     def configure_camera(self, nodes: RootNodes):
@@ -139,6 +177,7 @@ class Player(Character[PlayerNode]):
 
     @override
     def destroy(self):
+        self.level_text.value.destroy()
         self.key_tracker.ignore_all()
         return super().destroy()
 

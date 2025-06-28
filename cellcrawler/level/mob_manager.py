@@ -23,7 +23,7 @@ class MobCommandRestart:
 
 @final
 class MobManager(ManagedNode):
-    TASK_RESTART_DELAY = 3
+    TASK_RESTART_DELAY = 2
 
     def __init__(self, parent: Environment):
         super().__init__(parent)

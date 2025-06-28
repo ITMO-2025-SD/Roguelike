@@ -32,6 +32,7 @@ class PlayerNode(CharacterNode):
 
 @dataclass
 class NextCellContext:
+    mob: CharacterNode
     start_pos: tuple[int, int]
 
 

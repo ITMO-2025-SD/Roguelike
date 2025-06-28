@@ -1,13 +1,16 @@
 from typing import final, override
 
+from direct.gui.DirectLabel import DirectLabel
 from direct.interval.Interval import Interval
 from direct.interval.LerpInterval import LerpColorInterval, LerpScaleInterval
 from direct.interval.MetaInterval import Parallel
 from observables.observable_generic import ObservableObject
+from observables.observable_object import ComputedProperty
 from panda3d.core import NodePath
 from panda3d.direct import CInterval
 
 from cellcrawler.lib.managed_node import ManagedNode, ManagedNodePath
+from cellcrawler.lib.observable_utils import DirectGuiWrapper
 from cellcrawler.lib.p3d_utils import lerp_color, make_node_from_vertices
 
 TOP = 0.15
@@ -21,7 +24,9 @@ Y_DELTA = -0.001
 
 @final
 class CharacterHPBar(ManagedNodePath):
-    def __init__(self, parent: ManagedNode, health: ObservableObject[int], max_health: ObservableObject[int]) -> None:
+    def __init__(
+        self, parent: ManagedNode, health: ObservableObject[int], max_health: ObservableObject[int], text: str = "HP"
+    ) -> None:
         self.health = health
         self.max_health = max_health
         self.interval: Interval | CInterval | None = None
@@ -38,6 +43,16 @@ class CharacterHPBar(ManagedNodePath):
         self.hp_token = self.health.observe(lambda x: self.redraw())
         self.max_hp_token = self.max_health.observe(lambda x: self.redraw())
         self.inner_node.set_color(self.get_target_color())
+
+        self.level_text = DirectGuiWrapper(
+            DirectLabel,
+            text=ComputedProperty(lambda: f"{text}: {self.health.value}/{self.max_health.value}"),
+            text_fg=(1, 0, 0, 1),
+            scale=0.15,
+            pos=((LEFT + RIGHT) / 2, 0, 0),
+            parent=self.node,
+            relief=None,
+        )
 
     @property
     def hp_percentage(self):

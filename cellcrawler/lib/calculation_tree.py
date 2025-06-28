@@ -92,7 +92,13 @@ class Node(Generic[P_co, R]):
     def add_child(self, name: NodeIdT, child: "Node[Self, R]"):
         self._children[name] = child
 
+    @property
+    def destroyed(self):
+        return not hasattr(self, "_parent")
+
     def destroy(self):
+        if self.destroyed:
+            return
         self.dispatch(NodeDestroyed, self._name)
         self.root.listener.remove(self)
         for child in list(self._children.values()):

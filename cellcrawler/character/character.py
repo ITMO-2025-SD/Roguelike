@@ -3,6 +3,7 @@ import functools
 import math
 from collections import defaultdict
 from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, ClassVar, Final, Generic, Self, TypeVar, cast, final, override
 
@@ -27,6 +28,7 @@ from panda3d.core import (
 
 from cellcrawler.core.roguelike_calc_tree import CharacterNode, Damage, DamageContext, DamageDealt, LevelTree, MaxHealth
 from cellcrawler.lib.base import DependencyInjector, inject_globals
+from cellcrawler.lib.calculation_tree import Trigger
 from cellcrawler.lib.managed_node import ManagedNode, ManagedNodePath
 from cellcrawler.lib.model_repository import models
 from cellcrawler.lib.p3d_utils import make_polyset_solids
@@ -40,6 +42,16 @@ BEAM_ACTIVE_COLOR = Vec4(1, 0.2, 0.2, 1)
 PUSHER_COLLIDE_MASK = BitMask32(0x0001)
 PLAYER_BEAM_COLLIDE_MASK = BitMask32(0x0002)
 MOB_BEAM_COLLIDE_MASK = BitMask32(0x0004)
+
+
+@dataclass
+class AttackContext:
+    attacker: "Character[Any]"
+    defender: "Character[Any]"
+    damage: int
+
+
+AttackHappened = Trigger[AttackContext]("AttackHappened")
 
 
 class CommandType(Enum):
@@ -166,6 +178,7 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
         damage = ctx.damage = self.calc_node.calculate(Damage, self.DEFAULT_DAMAGE, ctx)
         if damage > 0 and other.set_attacked(damage):
             self.calc_node.dispatch(DamageDealt, ctx)
+            self.calc_node.dispatch(AttackHappened, AttackContext(self, other, damage))
 
     def set_attacked(self, damage: int):
         if self.health.value <= 0:
