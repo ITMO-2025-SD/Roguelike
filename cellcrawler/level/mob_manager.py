@@ -36,7 +36,7 @@ class MobManager(ManagedNode):
         time_passed = task.time
         while self.mob_command_restarts and self.mob_command_restarts[0].time <= time_passed:
             data = heapq.heappop(self.mob_command_restarts)
-            if not self.set_command_for(data.mob):
+            if not data.mob.removed and not self.set_command_for(data.mob):
                 heapq.heappush(
                     self.mob_command_restarts, MobCommandRestart(time_passed + self.TASK_RESTART_DELAY, data.mob)
                 )
