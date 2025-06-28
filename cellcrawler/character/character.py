@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, ClassVar, Final, Generic, Self, TypeVar, cast, final, override
+from typing import Any, Final, Generic, Self, TypeVar, cast, final, override
 
 from direct.directnotify.DirectNotifyGlobal import directNotify
 from direct.interval.FunctionInterval import Func
@@ -62,8 +62,8 @@ class CommandType(Enum):
 
 
 class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
-    DEFAULT_MAX_HEALTH: ClassVar[int] = 100
-    DEFAULT_DAMAGE: ClassVar[int] = 20
+    DEFAULT_MAX_HEALTH: int = 100
+    DEFAULT_DAMAGE: int = 20
 
     @abc.abstractmethod
     def get_collision_handler(self) -> CollisionHandlerEvent:
