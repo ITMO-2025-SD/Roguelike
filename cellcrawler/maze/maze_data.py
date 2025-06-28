@@ -34,6 +34,8 @@ class MazeData:
 
     def get_adjacent(self, x: int, y: int):
         out: list[tuple[int, int]] = []
+        if not (0 <= x < len(self.cells[0])) or not (0 <= y < len(self.cells)):
+            return out
         if x > 0 and is_visitable(self.cells[y][x - 1]):
             out.append((x - 1, y))
         if x + 1 < len(self.cells[0]) and is_visitable(self.cells[y][x + 1]):

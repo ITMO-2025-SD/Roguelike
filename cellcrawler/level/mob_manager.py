@@ -8,7 +8,7 @@ from cellcrawler.character.character import CommandType
 from cellcrawler.character.mob import Mob
 from cellcrawler.character.mob_factory import MobFactory
 from cellcrawler.core.environment import Environment
-from cellcrawler.lib.base import DependencyInjector
+from cellcrawler.lib.base import DependencyInjector, inject_globals
 from cellcrawler.lib.managed_node import ManagedNode
 
 
@@ -60,8 +60,9 @@ class MobManager(ManagedNode):
         heapq.heappush(self.mob_command_restarts, MobCommandRestart(-1, mob_))
 
     @override
-    def _cleanup(self) -> None:
-        self.__commandsetting_task.remove()
+    @inject_globals
+    def _cleanup(self, task_mgr: TaskManager) -> None:
+        task_mgr.remove(self.__commandsetting_task)
 
 
 @dataclasses.dataclass

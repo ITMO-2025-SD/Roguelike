@@ -44,6 +44,7 @@ from cellcrawler.lib.managed_node import ManagedNode
 from cellcrawler.lib.model_repository import models
 from cellcrawler.lib.p3d_utils import toggle_vis
 from cellcrawler.maze.pathfinding.character_pathfinding import CharacterPathfinding
+from cellcrawler.maze.pathfinding.repeated_pathfinder import RepeatedPathfinder
 
 
 @final
@@ -77,6 +78,7 @@ class Player(Character[PlayerNode]):
         self.pusher.set_horizontal(True)
         self.pathfinder = CharacterPathfinding(self)
         super().__init__(parent)
+        self.pathfinder_service = RepeatedPathfinder(self, self.pathfinder, 1)
         self.pusher.add_collider(self.collider_np, self.node)
         self.collision_node.set_into_collide_mask(0)
         self.collision_node.set_from_collide_mask(PUSHER_COLLIDE_MASK | MOB_BEAM_COLLIDE_MASK)

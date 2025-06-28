@@ -1,36 +1,34 @@
 import weakref
 from collections import deque
 from collections.abc import Callable
-from typing import Any, Self, final, override
+from typing import Protocol, Self, final, override
 
 from direct.directnotify.DirectNotifyGlobal import directNotify
 
-from cellcrawler.character.character import Character
 from cellcrawler.lib.base import DependencyInjector
 from cellcrawler.lib.managed_node import ManagedNode
 from cellcrawler.maze.maze_data import MazeData
 from cellcrawler.maze.pathfinding.pathfinding import PathfindingService
 
 
+class SupportsGetCellPos(Protocol):
+    def get_cell_pos(self) -> tuple[int, int]: ...
+    def run_on_cell_change(self, func: Callable[[Self], None], /) -> None: ...
+
+
 @final
 class CharacterPathfinding(PathfindingService):
     notify = directNotify.newCategory("CharacterPathfinding")
 
-    def __init__(self, player: Character[Any]):
+    def __init__(self, player: SupportsGetCellPos):
         self.distances: list[list[int | None]] = []
         self.__handlers: dict[ManagedNode, Callable[[Self], None]] = {}
         self.__player = player
-        self.__active: bool = False
 
-    def start(self):
-        if self.__active:
-            raise ValueError("Attempt to start CharacterPathfinding twice")
+    @override
+    def run(self):
         self.__player.run_on_cell_change(self.update_distances)
         self.distances = self.__get_distances(self.__player)
-        self.__active = True
-
-    def stop(self):
-        self.__active = False
 
     @override
     def register(self, node: ManagedNode, callback: Callable[[Self], None]):
@@ -43,7 +41,7 @@ class CharacterPathfinding(PathfindingService):
 
         node.run_before_destruction(remove_handler)
 
-    def update_distances(self, player: Character[Any]):
+    def update_distances(self, player: SupportsGetCellPos):
         self.distances = self.__get_distances(player)
         for h in self.__handlers.values():
             h(self)
@@ -59,7 +57,7 @@ class CharacterPathfinding(PathfindingService):
         distances = [(self.get_distance(x1, y1), (x1, y1)) for x1, y1 in options]
         return [(d, p) for d, p in distances if d is not None]
 
-    def __get_distances(self, player: Character[Any]) -> list[list[int | None]]:
+    def __get_distances(self, player: SupportsGetCellPos) -> list[list[int | None]]:
         maze = DependencyInjector.get(MazeData)
         out: list[list[int | None]] = [[None for _ in row] for row in maze.cells]
         x, y = player.get_cell_pos()

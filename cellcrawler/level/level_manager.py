@@ -38,6 +38,7 @@ class LevelManager(ManagedNode):
         self.level_tree = LevelTree()
         DependencyInjector.set_level_tree(self.level_tree)
         self.player: Final = Player(self)
+        self.pathfinding_started = False
         self.level_tree.accept(PlayerDied, self.destroy)
 
     def generate_floor(self, num: int) -> LevelFactory:
@@ -57,13 +58,14 @@ class LevelManager(ManagedNode):
         else:
             self.level_factory = self.generate_floor(self.level_num)
         if self.environ:
-            self.player.pathfinder.stop()
-            self.environ.destroy()  # destroys mob manager too
+            self.environ.destroy()  # destroys mob manager and pathfinder too
         self.environ = self.level_factory.make_env(self, self.level_tree)
         self.environ.run_on_floor_end(self.next_floor)
         self.mob_manager = MobManager(self.environ)
         self.environ.spawn_player(self.player)
-        self.player.pathfinder.start()
+        if not self.pathfinding_started:
+            self.pathfinding_started = True
+            self.player.pathfinder_service.start()
 
         if self.level_num < len(self.PredeterminedSpawns):
             spawner_constructor = self.PredeterminedSpawns[self.level_num]

@@ -155,8 +155,8 @@ class Character(ManagedNodePath, Generic[CalcNodeT], abc.ABC):
 
     @override
     @inject_globals
-    def destroy(self, ctrav: CollisionTraverser):
-        self.__command_task.remove()
+    def destroy(self, ctrav: CollisionTraverser, task_mgr: TaskManager):
+        task_mgr.remove(self.__command_task)
         characters.remove(self)
         ctrav.remove_collider(self.collider_np)
         return super().destroy()

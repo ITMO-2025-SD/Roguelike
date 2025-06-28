@@ -11,6 +11,7 @@ assets = ["panda-utils[everything]>=1.6.5"]
 dev = [
     "click<8.2.0",
     "panda-utils>=1.6.5",
+    "pytest>=8.4.1",
     "ruff>=0.11.10",
     "typer>=0.15.3",
     "types-panda3d>=0.4.1",
@@ -57,6 +58,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # magic value
 "cellcrawler/character/character_hp_bar.py" = ["PLR2004"]
+# tests
+"tests/**/*.py" = ["S101", "PLR2004"]
 
 [tool.pyright]
 pythonVersion = "3.12"

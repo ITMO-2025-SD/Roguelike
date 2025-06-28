@@ -14,3 +14,6 @@ class PathfindingService(abc.ABC):
 
     @abc.abstractmethod
     def get_distances_to_adjacent(self, x: int, y: int) -> list[tuple[int, tuple[int, int]]]: ...
+
+    @abc.abstractmethod
+    def run(self) -> None: ...
